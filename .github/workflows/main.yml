@@ -48,7 +48,7 @@ jobs:
       id: upload
       with:
         name: Release
-        path: ${{ github.workspace }}\ACNHPokerCore\bin\Release\net7.0-windows\win-x64\publish\*
+        path: ${{ github.workspace }}\AutoLegalityMod\bin\Release\net8.0-windows\publish\*
         overwrite: true
         retention-days: 1
 
