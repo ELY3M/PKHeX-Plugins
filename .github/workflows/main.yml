@@ -28,7 +28,7 @@ jobs:
       uses: microsoft/setup-msbuild@v1
 
     - name: Get pkhex  
-      run: git clone -q --depth=5 --branch=master https://github.com/kwsch/PKHeX.git $(Build.SourcesDirectory)/PKHeX
+      run: git clone -q --depth=5 --branch=master https://github.com/kwsch/PKHeX.git ${{ github.workspace }}/PKHeX
        
     - name: Restore NuGet packages
       working-directory: ${{env.GITHUB_WORKSPACE}}
