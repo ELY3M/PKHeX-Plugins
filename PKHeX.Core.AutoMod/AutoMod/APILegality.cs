@@ -76,7 +76,8 @@ namespace PKHeX.Core.AutoMod
             var gamelist = FilteredGameList(template, destVer, AllowBatchCommands, set, native);
             if (dest.Generation <= 2)
                 template.EXP = 0; // no relearn moves in gen 1/2 so pass level 1 to generator
-
+            if (gamelist.Length == 1 && gamelist[0] == GameVersion.DP)
+                gamelist = [GameVersion.D, GameVersion.P];
             var encounters = GetAllEncounters(pk: template, moves: new ReadOnlyMemory<ushort>(set.Moves), gamelist);
             var criteria = EncounterCriteria.GetCriteria(set, template.PersonalInfo);
             criteria.ForceMinLevelRange = true;
@@ -104,7 +105,7 @@ namespace PKHeX.Core.AutoMod
                 criteria = SetSpecialCriteria(criteria, enc, set);
 
                 // Create the PKM from the template.
-                var tr = SimpleEdits.IsUntradeableEncounter(enc) ? dest : GetTrainer(regen, enc, set);
+                var tr = SimpleEdits.IsUntradeableEncounter(enc) ? dest : GetTrainer(regen, enc, set, dest);
                 var raw = enc.GetPokemonFromEncounter(tr, criteria, set);
                 if (raw.OriginalTrainerName.Length == 0)
                 {
@@ -332,7 +333,7 @@ namespace PKHeX.Core.AutoMod
         /// </summary>
         /// <param name="regen">Regenset</param>
         /// <returns>ITrainerInfo of the trainerdetails</returns>
-        private static ITrainerInfo GetTrainer(RegenSet regen, IEncounterable enc, IBattleTemplate set)
+        private static ITrainerInfo GetTrainer(RegenSet regen, IEncounterable enc, IBattleTemplate set, ITrainerInfo dest)
         {
             var ver = enc.Version;
             var gen = enc.Generation;
@@ -360,7 +361,7 @@ namespace PKHeX.Core.AutoMod
             if (AllowTrainerOverride && regen.HasTrainerSettings && regen.Trainer != null)
                 return regen.Trainer.MutateLanguage(mutate, ver);
 
-            return UseTrainerData ? TrainerSettings.GetSavedTrainerData(ver, gen).MutateLanguage(mutate, ver) : TrainerSettings.DefaultFallback(ver, regen.Extra.Language);
+            return UseTrainerData ? TrainerSettings.GetSavedTrainerData(ver, gen).MutateLanguage(mutate, ver) : TrainerSettings.DefaultFallback(ver, regen.Extra.Language??(LanguageID)dest.Language);
         }
 
         /// <summary>
@@ -1311,7 +1312,10 @@ namespace PKHeX.Core.AutoMod
                 {
                     var stat = rng.NextUInt(6);
                     if (ivs[stat] != -1)
+                    {
+                        inherited++;
                         continue;
+                    }
 
                     rng.NextUInt(2); // decides which parents iv to inherit, assume that parent has the required IV
                     ivs[stat] = required_ivs[stat];
@@ -1422,7 +1426,7 @@ namespace PKHeX.Core.AutoMod
                 uint seed = Util.Rand32();
                 if (isWishmaker)
                 {
-                    seed = WC3Seeds.GetShinyWishmakerSeed((Nature)iterPKM.Nature);
+                    seed = WC3Seeds.GetShinyWishmakerSeed(iterPKM.Nature);
                     isWishmaker = false;
                 }
                 if (PokeWalkerSeedFail(seed, Method, pk, iterPKM))
@@ -1529,8 +1533,9 @@ namespace PKHeX.Core.AutoMod
             var pidxor = ((pk.TID16 ^ pk.SID16 ^ (int)(pk.PID & 0xFFFF) ^ (int)(pk.PID >> 16)) & ~0x7) == 8;
             if (Method == PIDType.Channel && (shiny != pk.IsShiny || pidxor))
                 return false;
-
-            if (enc.Version == GameVersion.HGSS || enc.Version == GameVersion.Pt || enc.Version == GameVersion.DP)
+            if (pk.Species == (ushort)Species.Jirachi)
+                return false;
+            if (Method == PIDType.Pokewalker)
                 return false;
             if (!new LegalityAnalysis(pk).Valid)
                 return false;
