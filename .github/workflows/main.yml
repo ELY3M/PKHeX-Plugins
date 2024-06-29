@@ -27,7 +27,7 @@ jobs:
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1
 
-    - name: Get pkhex  
+    - name: Get Pkhex  
       run: git clone -q --depth=5 --branch=master https://github.com/kwsch/PKHeX.git ${{ github.workspace }}/PKHeX
        
     - name: Restore NuGet packages
@@ -43,17 +43,28 @@ jobs:
     - name: Show Github infos
       run:  echo 'Workspace path ${{ github.workspace }} - runner.temp ${{ runner.temp }}'     
       
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      id: upload
+    - name: Create Release
+      uses: actions/create-release@latest
+      env:
+        GITHUB_TOKEN: ${{ github.token }} 
       with:
-        name: Release-plugin
-        path: ${{ github.workspace }}\AutoLegalityMod\bin\Release\net8.0-windows\publish\*
-        overwrite: true
-        retention-days: 1
+        draft: false
+        prerelease: false
+        release_name: ${{ steps.version.outputs.version }}
+        tag_name: ${{ github.run_number }}
+        body: ${{ github.event.head_commit.message }}
 
-    - name: Output artifact ID
-      run:  echo 'Artifact ID is ${{ steps.upload.outputs.artifact-id }}'        
+    - name: Zipping up Release folder
+      run: 7z a release.zip "${{ github.workspace }}\Digital Clock\bin\Release\"
+            
+    - name: Upload Release
+      uses: softprops/action-gh-release@v2
+      with:
+        draft: false
+        prerelease: false    
+        tag_name: ${{ github.run_number }}
+        body: ${{ github.event.head_commit.message }}
+        files: ${{ github.workspace }}\release.zip
+      env:
+        GITHUB_TOKEN: ${{ github.token }} 
         
-    - name: Output Artifact URL
-      run:  echo 'Artifact URL is ${{ steps.upload.outputs.artifact-url }}'
