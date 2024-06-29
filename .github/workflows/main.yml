@@ -54,8 +54,8 @@ jobs:
         tag_name: ${{ github.run_number }}
         body: ${{ github.event.head_commit.message }}
 
-    - name: Zipping up Release folder
-      run: 7z a release.zip "${{ github.workspace }}\Digital Clock\bin\Release\"
+    ##- name: Zipping up Release folder
+    ##run: 7z a release.zip "${{ github.workspace }}\Digital Clock\bin\Release\"
             
     - name: Upload Release
       uses: softprops/action-gh-release@v2
@@ -64,7 +64,7 @@ jobs:
         prerelease: false    
         tag_name: ${{ github.run_number }}
         body: ${{ github.event.head_commit.message }}
-        files: ${{ github.workspace }}\release.zip
+        files: ${{ github.workspace }}\AutoLegalityMod\bin\Release\net8.0-windows\AutoModPlugins.dll
       env:
         GITHUB_TOKEN: ${{ github.token }} 
         
