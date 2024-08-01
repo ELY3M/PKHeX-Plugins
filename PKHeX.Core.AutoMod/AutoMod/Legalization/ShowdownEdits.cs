@@ -69,7 +69,7 @@ namespace PKHeX.Core.AutoMod
         {
             if (pk.Ability != set.Ability)
                 pk.RefreshAbility(pk is PK5 { HiddenAbility: true } ? 2 : pk.AbilityNumber >> 1);
-            if (pk.Ability != set.Ability && pk.Context >= EntityContext.Gen8 && set.Ability != -1)
+            if (pk.Ability != set.Ability && pk.Context >= EntityContext.Gen6 && set.Ability != -1)
                 pk.RefreshAbility(pk is PK5 { HiddenAbility: true } ? 2 : pk.PersonalInfo.GetIndexOfAbility(set.Ability));
             if (preference <= 0)
                 return;
@@ -183,7 +183,7 @@ namespace PKHeX.Core.AutoMod
             var gen = enc.Generation;
             var maxlen = Legal.GetMaxLengthNickname(gen, finallang);
             var newnick = RegenUtil.MutateNickname(set.Nickname, finallang, (GameVersion)pk.Version);
-            if (pk.Format < 3 && newnick?.Length == 0)
+            if (pk.Format < 3 && newnick.Length == 0)
                 newnick = SpeciesName.GetSpeciesName(pk.Species, (int)finallang);
             var nickname = newnick.Length > maxlen ? newnick[..maxlen] : newnick;
             if (!WordFilter.IsFiltered(nickname, out _))
