@@ -31,7 +31,7 @@ jobs:
       run: git clone -q --depth=5 --branch=master https://github.com/kwsch/PKHeX.git ${{ github.workspace }}/PKHeX
        
     - name: Build Pkhex
-      working-directory: ${{env.GITHUB_WORKSPACE}}/Pkhex
+      working-directory: ${{env.GITHUB_WORKSPACE}}/PKHeX
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
       # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
       run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{ github.workspace }}/PKHeX
