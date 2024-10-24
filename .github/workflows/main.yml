@@ -43,9 +43,7 @@ jobs:
 
     - name: Show Nuget Dirs
       run: |
-        dir ${{ github.workspace }} /S
-        dir ${{ runner.temp }} /S
-
+        dir /S
 
     - name: Restore NuGet packages
       working-directory: ${{env.GITHUB_WORKSPACE}}
