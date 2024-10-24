@@ -29,7 +29,11 @@ jobs:
 
     - name: Get Pkhex  
       run: git clone -q --depth=5 --branch=master https://github.com/kwsch/PKHeX.git ${{ github.workspace }}/PKHeX
-       
+
+    - name: Restore NuGet packages
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: nuget restore ${{ github.workspace }}\PKHeX\PKHeX.sln
+      
     - name: Build Pkhex
       working-directory: ${{env.GITHUB_WORKSPACE}}
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
