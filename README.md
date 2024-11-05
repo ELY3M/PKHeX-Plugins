@@ -3,6 +3,10 @@ This project uses `PKHeX.Core` and PKHeX's `IPlugin` interface to add enhancemen
 This Fork is owned by [@santacrab2](https://github.com/santacrab2)
 The original project is owned by [@architdate](https://github.com/architdate) (Discord: thecommondude#8240) and [@kwsch](https://github.com/kwsch) (Discord: Kurt#6024).
 
+## Elys Changes 
+I just added script to auto build the plugin on this fork.  
+
+
 ## Building  
 This project requires an IDE that supports compiling .NET based code, such as Visual Studio 2022, and the [.NET 8.0 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0).
 
