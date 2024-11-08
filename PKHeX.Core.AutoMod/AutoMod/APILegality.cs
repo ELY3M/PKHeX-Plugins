@@ -84,6 +84,7 @@ namespace PKHeX.Core.AutoMod
             if (regen.EncounterFilters.Any())
                 encounters = encounters.Where(enc => BatchEditing.IsFilterMatch(regen.EncounterFilters, enc));
             PKM? last = null;
+            var AllowHome = ParseSettings.Settings.HOMETransfer.HOMETransferTrackerNotPresent != Severity.Invalid;
             foreach (var enc in encounters)
             {
                 // Return out if set times out
@@ -128,8 +129,7 @@ namespace PKHeX.Core.AutoMod
                 if (!EntityConverter.IsCompatibleGB(pk, template.Japanese, pk.Japanese))
                     continue;
 
-                pk = pk.Clone(); // Handle Nickname-Trash issues (weedle word filter)
-                if (dest.Generation >= 8 && HomeTrackerUtil.IsRequired(enc, pk) && !AllowHOMETransferGeneration)
+                if (dest.Generation >= 8 && HomeTrackerUtil.IsRequired(enc, pk) && !AllowHome)
                     continue;
 
                 // Apply final details
@@ -1034,6 +1034,7 @@ namespace PKHeX.Core.AutoMod
             uint count = 0;
             uint finalseed = 0;
             ulong seed = Util.Rand.Rand64();
+            Span<int> ivs = stackalloc int[6];
             do
             {
                 var pi = PersonalTable.SV.GetFormEntry(enc.Species, enc.Form);
@@ -1086,21 +1087,20 @@ namespace PKHeX.Core.AutoMod
                 pk.PID = pid;
                 if (pk.IsShiny != set.Shiny)
                     continue;
-                const int UNSET = -1;
-                const int MAX = 31;
-                Span<int> ivs = [UNSET, UNSET, UNSET, UNSET, UNSET, UNSET];
+
+                ivs.Fill(-1);
                 for (int i = 0; i < ((IFlawlessIVCount)enc).FlawlessIVCount; i++)
                 {
                     int index;
                     do { index = (int)rand.NextInt(6); }
-                    while (ivs[index] != UNSET);
-                    ivs[index] = MAX;
+                    while (ivs[index] != -1);
+                    ivs[index] = 31;
                 }
 
                 for (int i = 0; i < 6; i++)
                 {
-                    if (ivs[i] == UNSET)
-                        ivs[i] = (int)rand.NextInt(MAX + 1);
+                    if (ivs[i] == -1)
+                        ivs[i] = (int)rand.NextInt(32);
                 }
                 if (!criteria.IsIVsCompatibleSpeedLast(ivs,9))
                     continue;
@@ -1208,22 +1208,21 @@ namespace PKHeX.Core.AutoMod
             }
 
             // RNG is fixed now and you have the requested shiny!
-            const int UNSET = -1;
-            const int MAX = 31;
-            for (int i = ivs.Count(z => z == MAX); i < flawless; i++)
+
+            for (int i = ivs.Count(z => z == 31); i < flawless; i++)
             {
                 int index = (int)rng.NextInt(6);
-                while (ivs[index] != UNSET)
+                while (ivs[index] != -1)
                 {
                     index = (int)rng.NextInt(6);
                 }
 
-                ivs[index] = MAX;
+                ivs[index] = 31;
             }
 
             for (int i = 0; i < 6; i++)
             {
-                if (ivs[i] == UNSET)
+                if (ivs[i] == -1)
                     ivs[i] = (int)rng.NextInt(32);
             }
 
@@ -1248,46 +1247,34 @@ namespace PKHeX.Core.AutoMod
         /// <param name="gender"></param>
         public static void FindEggPIDIV8b(PKM pk, Shiny shiny, byte? gender, EncounterCriteria criteria)
         {
-            var ivs = new[] { -1, -1, -1, -1, -1, -1 };
+            Span<int> ivs = stackalloc int[6];
             var IVs = pk.IVs;
-            var required_ivs = new[] { IVs[0], IVs[1], IVs[2], IVs[4], IVs[5], IVs[3] };
+            ReadOnlySpan<int> required_ivs = [IVs[0], IVs[1], IVs[2], IVs[4], IVs[5], IVs[3]];
             var pi = PersonalTable.BDSP.GetFormEntry(pk.Species, pk.Form);
             var ratio = pi.Gender;
-
+            var species = (int)pk.Species;
             while (true)
             {
                 var seed = Util.Rand32();
                 var rng = new Xoroshiro128Plus8b(seed);
 
-                var nido_family_f = new[]
-                {
-                    (int)Species.NidoranF,
-                    (int)Species.Nidorina,
-                    (int)Species.Nidoqueen
-                };
-                var nido_family_m = new[]
-                {
-                    (int)Species.NidoranM,
-                    (int)Species.Nidorino,
-                    (int)Species.Nidoking
-                };
-                if (nido_family_m.Contains(pk.Species) || nido_family_f.Contains(pk.Species))
+                if ((uint)(species - (int)Species.NidoranF) < 6)
                 {
                     var nido_roll = rng.NextUInt(2);
-                    if (nido_roll == 1 && nido_family_m.Contains(pk.Species)) // Nidoran F
+                    if (nido_roll == 1 && species <= (int)Species.Nidoqueen) // Nidoran F
                         continue;
 
-                    if (nido_roll == 0 && nido_family_f.Contains(pk.Species)) // Nidoran M
+                    if (nido_roll == 0 && species >= (int)Species.NidoranM) // Nidoran M
                         continue;
                 }
 
-                if (pk.Species is (int)Species.Illumise or (int)Species.Volbeat)
+                if (species is (int)Species.Illumise or (int)Species.Volbeat)
                 {
-                    if (rng.NextUInt(2) != (int)Species.Illumise - pk.Species)
+                    if (rng.NextUInt(2) != (int)Species.Illumise - species)
                         continue;
                 }
 
-                if (pk.Species == (int)Species.Indeedee)
+                if (species == (int)Species.Indeedee)
                 {
                     if (rng.NextUInt(2) != pk.Form)
                         continue;
@@ -1302,28 +1289,31 @@ namespace PKHeX.Core.AutoMod
                 }
 
                 // nature
-                _ = rng.NextUInt(25); // assume one parent always carry an everstone
+                _ = rng.NextUInt(25); // Assume one parent always carries an Everstone.
 
                 // ability
-                _ = rng.NextUInt(100); // assume the ability is changed using capsule/patch (assume parent is ability 0/1)
+                _ = rng.NextUInt(100); // Ability can be changed using Capsule/Patch (Assume parent is ability 0/1).
+
+                // The game does a rand(6) to decide which IV's inheritance to check.
+                // If that IV isn't marked to inherit from a parent, it does a rand(2) to pick the parent.
+                // When generating egg IVs, it first randomly fills in the egg IVs with rand(32) x6, then overwrites with parent IVs based on tracking.
+                // We'll assume both parents have the perfect IVs and copy over the parent IV as it's inherited, then fill in blanks afterwards.
 
                 // assume other parent always has destiny knot
                 const int inheritCount = 5;
                 var inherited = 0;
+                ivs.Fill(-1);
                 while (inherited < inheritCount)
                 {
-                    var stat = rng.NextUInt(6);
-                    if (ivs[stat] != -1)
-                    {
-                        inherited++;
+                    var stat = (int)rng.NextUInt(6); // Decides which IV to check.
+                    if (ivs[stat] != -1) // Only -1 if not already inherited.
                         continue;
-                    }
 
-                    rng.NextUInt(2); // decides which parents iv to inherit, assume that parent has the required IV
+                    _ = rng.NextUInt(2); // Decides which parent's IV to inherit. Assume both parents have the same desired IVs.
                     ivs[stat] = required_ivs[stat];
                     inherited++;
                 }
-                Span<uint> ivs2 = [
+                Span<uint> randomivs = [
                     rng.NextUInt(32),
                     rng.NextUInt(32),
                     rng.NextUInt(32),
@@ -1334,7 +1324,7 @@ namespace PKHeX.Core.AutoMod
                 for (int i = 0; i < 6; i++)
                 {
                     if (ivs[i] == -1)
-                        ivs[i] = (int)ivs2[i];
+                        ivs[i] = (int)randomivs[i];
                 }
                 if (!criteria.IsIVsCompatibleSpeedLast(ivs, 8))
                     continue;
@@ -1848,8 +1838,30 @@ namespace PKHeX.Core.AutoMod
         /// <summary>
         /// Wrapper function for GetLegalFromTemplate but with a Timeout
         /// </summary>
-        public static AsyncLegalizationResult GetLegalFromTemplateTimeout(this ITrainerInfo dest, PKM template, IBattleTemplate set, bool nativeOnly = false) =>
-            GetLegalFromTemplateTimeoutAsync(dest, template, set, nativeOnly).ConfigureAwait(false).GetAwaiter().GetResult();
+        public static AsyncLegalizationResult GetLegalFromTemplateTimeout(this ITrainerInfo dest, PKM template, IBattleTemplate set, bool nativeOnly = false)
+        {
+            AsyncLegalizationResult GetLegal()
+            {
+                try
+                {
+                    if (!EnableDevMode && ALMVersion.GetIsMismatch())
+                        return new(template, LegalizationResult.VersionMismatch);
+
+                    var res = dest.GetLegalFromTemplate(template, set, out var s, nativeOnly);
+                    return new AsyncLegalizationResult(res, s);
+                }
+                catch (MissingMethodException)
+                {
+                    return new AsyncLegalizationResult(template, LegalizationResult.VersionMismatch);
+                }
+            }
+
+            var task = Task.Run(GetLegal);
+            var first = task.TimeoutAfter(new TimeSpan(0, 0, 0, Timeout))?.Result;
+            return first ?? new AsyncLegalizationResult(template, LegalizationResult.Timeout);
+        }
+        public static AsyncLegalizationResult AsyncGetLegalFromTemplateTimeout(this ITrainerInfo dest, PKM template, IBattleTemplate set, bool nativeOnly = false) =>
+          GetLegalFromTemplateTimeoutAsync(dest, template, set, nativeOnly).ConfigureAwait(false).GetAwaiter().GetResult();
         public static async Task<AsyncLegalizationResult> GetLegalFromTemplateTimeoutAsync(this ITrainerInfo dest, PKM template, IBattleTemplate set, bool nativeOnly = false)
         {
             AsyncLegalizationResult GetLegal()
@@ -1886,6 +1898,17 @@ namespace PKHeX.Core.AutoMod
         {
             public readonly PKM Created = pk;
             public readonly LegalizationResult Status = res;
+        }
+
+        private static async Task<AsyncLegalizationResult?>? TimeoutAfter(this Task<AsyncLegalizationResult> task, TimeSpan timeout)
+        {
+            using var cts = new CancellationTokenSource(timeout);
+            var delay = Task.Delay(timeout, cts.Token);
+            var completedTask = await Task.WhenAny(task, delay).ConfigureAwait(false);
+            if (completedTask != task)
+                return null;
+
+            return await task.ConfigureAwait(false); // will re-fire exception if present
         }
 
         private static GameVersion[] GetPairedVersions(GameVersion version, IEnumerable<GameVersion> versionlist)

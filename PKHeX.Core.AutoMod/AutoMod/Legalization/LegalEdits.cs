@@ -59,7 +59,6 @@ namespace PKHeX.Core.AutoMod
                     Aesthetics.ApplyShinyBall(pk);
                 }
             }
-
             var la = new LegalityAnalysis(pk);
             if (force || la.Valid)
                 return;
