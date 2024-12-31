@@ -58,7 +58,7 @@ jobs:
     - name: copy latest dll to nuget pkhex.core dir
       run: | 
         echo "pkhex version: ${{ env.VERSIONNAME }}" 
-        XCOPY ${{ github.workspace }}\PKHeX\PKHeX.Core\bin\Release\net9.0\PKHeX.Core.dll C:\Users\runneradmin\.nuget\packages\pkhex.core\${{ env.VERSIONNAME }}\lib\net9.0 /Y 
+        XCOPY ${{ github.workspace }}\PKHeX\PKHeX.Core\bin\Release\net9.0\PKHeX.Core.dll C:\Users\runneradmin\.nuget\packages\pkhex.core\${{ env.VERSIONNAME }}\lib\net9.0\ /Y 
       
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
