@@ -53,7 +53,7 @@ jobs:
 ##xmllint --xpath '//Version/text()' Directory.Build.props >> version
     - name: Get pkhex.core version
       run: |
-          dir C:\Users\runneradmin\.nuget\packages\pkhex.core\ /b >> version          
+          dir //b C:\Users\runneradmin\.nuget\packages\pkhex.core\ >> version          
           $VERSIONNAME=$(cat version)
           echo "VERSIONNAME=$VERSIONNAME" >> $env:GITHUB_ENV
           echo VERSIONNAME is: $VERSIONNAME            
