@@ -58,7 +58,7 @@ jobs:
     
     - name: nuget pkhex.core dir
       run: |           
-          dir C:\Users\runneradmin\.nuget\packages\pkhex.core\${{ env.VERSIONNAME }}\lib\net9.0\
+          dir C:\Users\runneradmin\.nuget\packages\pkhex.core\
           
     - name: copy latest dll to nuget pkhex.core dir
       run: | 
