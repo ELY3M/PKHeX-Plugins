@@ -49,17 +49,15 @@ jobs:
       run: | 
           nuget restore ${{env.SOLUTION_FILE_PATH}}
 
+
+##xmllint --xpath '//Version/text()' Directory.Build.props >> version
     - name: Get pkhex.core version
       run: |
-          xmllint --xpath '//Version/text()' Directory.Build.props >> version
+          dir /b C:\Users\runneradmin\.nuget\packages\pkhex.core\ >> version          
           $VERSIONNAME=$(cat version)
           echo "VERSIONNAME=$VERSIONNAME" >> $env:GITHUB_ENV
           echo VERSIONNAME is: $VERSIONNAME            
     
-    - name: nuget pkhex.core dir
-      run: |           
-          dir C:\Users\runneradmin\.nuget\packages\pkhex.core\
-          
     - name: copy latest dll to nuget pkhex.core dir
       run: | 
         echo "pkhex version: ${{ env.VERSIONNAME }}" 
