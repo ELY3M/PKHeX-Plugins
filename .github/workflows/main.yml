@@ -46,19 +46,22 @@ jobs:
                           
     - name: Restore NuGet packages
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+      run: | 
+          nuget restore ${{env.SOLUTION_FILE_PATH}}
+          dir C:\Users\runneradmin\.nuget\packages\pkhex.core\${{ env.VERSIONNAME }}\lib\net9.0\
 
     - name: Get pkhex.core version
       run: |
           xmllint --xpath '//Version/text()' Directory.Build.props >> version
           $VERSIONNAME=$(cat version)
           echo "VERSIONNAME=$VERSIONNAME" >> $env:GITHUB_ENV
-          echo VERSIONNAME is: $VERSIONNAME      
-     
+          echo VERSIONNAME is: $VERSIONNAME            
+          
     - name: copy latest dll to nuget pkhex.core dir
       run: | 
         echo "pkhex version: ${{ env.VERSIONNAME }}" 
         XCOPY ${{ github.workspace }}\PKHeX\PKHeX.Core\bin\Release\net9.0\PKHeX.Core.dll C:\Users\runneradmin\.nuget\packages\pkhex.core\${{ env.VERSIONNAME }}\lib\net9.0\ /Y 
+        dir C:\Users\runneradmin\.nuget\packages\pkhex.core\${{ env.VERSIONNAME }}\lib\net9.0\
       
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
