@@ -48,7 +48,6 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: | 
           nuget restore ${{env.SOLUTION_FILE_PATH}}
-          dir C:\Users\runneradmin\.nuget\packages\pkhex.core\${{ env.VERSIONNAME }}\lib\net9.0\
 
     - name: Get pkhex.core version
       run: |
@@ -56,6 +55,10 @@ jobs:
           $VERSIONNAME=$(cat version)
           echo "VERSIONNAME=$VERSIONNAME" >> $env:GITHUB_ENV
           echo VERSIONNAME is: $VERSIONNAME            
+    
+    - name: nuget pkhex.core dir
+      run: |           
+          dir C:\Users\runneradmin\.nuget\packages\pkhex.core\${{ env.VERSIONNAME }}\lib\net9.0\
           
     - name: copy latest dll to nuget pkhex.core dir
       run: | 
