@@ -93,7 +93,7 @@ public static class BattleTemplateLegality
             return ALPHA_INVALID;
 
         encounters.RemoveAll(enc => !APILegality.IsRequestedAlphaValid(set, enc));
-        if (WordFilter.IsFiltered(failed.Nickname, out _) || WordFilter.IsFiltered(failed.OriginalTrainerName, out _) || WordFilter.IsFiltered(failed.HandlingTrainerName, out _))
+        if (WordFilter.IsFiltered(failed.Nickname, out _,failed.Context) || WordFilter.IsFiltered(failed.OriginalTrainerName, out _,failed.Context) || WordFilter.IsFiltered(failed.HandlingTrainerName, out _,failed.Context))
             return string.Format(BAD_WORDS, species_name);
 
         // Ability checks
@@ -158,7 +158,7 @@ public static class BattleTemplateLegality
 
     private static int Recurse(IBattleTemplate set, Memory<ushort> request, PKM blank, GameVersion[] gamelist, List<ushort> moves)
     {
-        if (moves.Count == 1)
+        if (moves.Count <= 1)
             return 0;
 
         // Breadth first search to find the most valid moveset -- remove one move and check, and restore if not.

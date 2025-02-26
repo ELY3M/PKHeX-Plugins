@@ -137,7 +137,9 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
             return;
 
         var data = tdata(Remote.Bot);
-        data?.CopyTo(dest);
+        if (data is null || data.Length == 0)
+            return;
+        data.CopyTo(dest);
     }
 
     private void ChangeBox(object? sender, EventArgs e)
@@ -198,7 +200,7 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
             if (_settings.EnableDevMode && lv is LiveHeXVersion.Unknown)
                 Text += " [Forced DevMode]";
 
-            if (Remote.Bot.com is IPokeBlocks)
+            if (Remote.Bot.com is IPokeBlocks && lv is not LiveHeXVersion.Unknown)
             {
                 var cblist = GetSortedBlockList(currVer).ToArray();
                 if (cblist.Length > 0)
@@ -310,20 +312,11 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
             return (LiveHeXValidation.None, "", lv);
 
         var data = Remote.Bot.ReadSlot(0, 0);
-        PKM? pkm = null;
-        try
-        {
-            pkm = SAV.SAV.GetDecryptedPKM(data.ToArray());
-        }
-        catch
-        {
-            // Ignore.
-        }
-
+        PKM? pkm = SAV.SAV.GetDecryptedPKM(data.ToArray());
         bool valid = pkm is not null && pkm.Species <= pkm.MaxSpeciesID && pkm.ChecksumValid &&
                      pkm is { Species: 0, EncryptionConstant: 0 }
                          or { Species: not 0, Language: not (int)LanguageID.Hacked and not (int)LanguageID.UNUSED_6 };
-        return !_settings.EnableDevMode && !valid && InjectionBase.CheckRAMShift(Remote.Bot, out string err) ? (LiveHeXValidation.RAMShift, err, lv) : (LiveHeXValidation.None, "", lv);
+        return !_settings.EnableDevMode && !valid && InjectionBase.CheckRAMShift(Remote.Bot, out string err) ? (LiveHeXValidation.RAMShift, err, lv) : !valid ? (LiveHeXValidation.GameVersion,"Invalid data found.",LiveHeXVersion.Unknown): (LiveHeXValidation.None, "", lv);
     }
 
     private void B_Disconnect_Click(object sender, EventArgs e)

@@ -80,13 +80,16 @@ public static class APILegality
         var gamelist = FilteredGameList(template, destVer, AllowBatchCommands, set, native);
         if (gamelist is [GameVersion.DP])
             gamelist = [GameVersion.D, GameVersion.P];
+        if (gamelist is [GameVersion.RS])
+            gamelist = [GameVersion.R, GameVersion.S];
 
         var mutations = EncounterMutationUtil.GetSuggested(dest.Context, set.Level);
         var encounters = GetAllEncounters(pk: template, moves: new ReadOnlyMemory<ushort>(set.Moves), gamelist);
         var criteria = EncounterCriteria.GetCriteria(set, template.PersonalInfo, mutations);
         if (regen.EncounterFilters.Any())
             encounters = encounters.Where(enc => BatchEditing.IsFilterMatch(regen.EncounterFilters, enc));
-
+        if (regen.SeedFilters.Any())
+            encounters = encounters.Where(enc => enc is (IGenerateSeed32 or IGenerateSeed64)); // Only allow seed generation for seed encounters
         // For sets that require a specific level, force the level maximum that the generator will yield.
         // Most encounters generate with minimum level; only those with checked PID/IV will have non-minimum levels.
 
@@ -119,8 +122,30 @@ public static class APILegality
             raw = raw.SanityCheckLocation(enc);
             if (raw.IsEgg) // PGF events are sometimes eggs. Force hatch them before proceeding
                 raw.HandleEggEncounters(enc, tr);
-            raw.PreSetPIDIV(enc, set, criteria);
-
+            if (enc is (IGenerateSeed32 or IGenerateSeed64) && regen.SeedFilters.Any())
+            {
+                switch (enc)
+                {
+                    case IGenerateSeed32 GS32:
+                        var converted = Convert.ToUInt32(regen.SeedFilters[0], 16);
+                        GS32.GenerateSeed32(raw, converted);
+                        if (enc is ITeraRaid9 tr9)
+                        {
+                            var type = Tera9RNG.GetTeraType(converted, tr9.TeraType, enc.Species, enc.Form);
+                            ((PK9)raw).TeraTypeOriginal = (MoveType)type;
+                            if (set.TeraType != MoveType.Any && (MoveType)type != set.TeraType && TeraTypeUtil.CanChangeTeraType(enc.Species))
+                                ((PK9)raw).SetTeraType(set.TeraType);
+                        }
+                        break;
+                    case IGenerateSeed64 GS64:
+                        var converted64 = Convert.ToUInt64(regen.SeedFilters[0], 16);
+                        GS64.GenerateSeed64(raw, converted64); break;
+                }
+            }
+            else
+            {
+                raw.PreSetPIDIV(enc, set, criteria);
+            }
             // Transfer any VC1 via VC2, as there may be GSC exclusive moves requested.
             if (dest.Generation >= 7 && raw is PK1 basepk1)
                 raw = basepk1.ConvertToPK2();
@@ -138,7 +163,6 @@ public static class APILegality
 
             // Apply final details
             ApplySetDetails(pk, set, dest, enc, regen, criteria);
-
             // Apply final tweaks to the data.
             if (pk is IGigantamax gmax && gmax.CanGigantamax != set.CanGigantamax)
             {
@@ -279,7 +303,7 @@ public static class APILegality
 
         var versionlist = GameUtil.GetVersionsWithinRange(template, template.Format);
         var gamelist = !nativeOnly ? [.. versionlist.OrderByDescending(c => c.GetGeneration())] : GetPairedVersions(destVer, versionlist);
-        if (PrioritizeGame && !nativeOnly)
+        if (PrioritizeGame)
             gamelist = PrioritizeGameVersion == GameVersion.Any ? PrioritizeVersion(gamelist, destVer.GetIsland()) : PrioritizeVersion(gamelist, PrioritizeGameVersion);
 
         if (template.AbilityNumber == 4 && destVer.GetGeneration() < 8)
@@ -1309,8 +1333,6 @@ public static class APILegality
     /// <param name="set"></param>
     private static void FindPIDIV(PKM pk, PIDType method, int hiddenPower, bool shiny, IEncounterTemplate enc, IBattleTemplate set)
     {
-        if (enc.Generation == 4 && pk.Species == (ushort)Species.Unown) // set unown form for gen 4 encounters because otherwise you get a random form from database
-            pk.Form = set.Form;  //this setting of the form could probably be replaced with adding Form to EncounterCriteria so that it comes out of the database correctly.
         if (method == PIDType.None)
         {
             method = FindLikelyPIDType(enc);
@@ -1584,7 +1606,7 @@ public static class APILegality
                 Revise(criteria, def: criteria.IV_DEF, spe: criteria.IV_SPE),
             (int)Species.Pyukumuku when criteria is { IV_DEF: 0, IV_SPD: 0 } && set.Ability == (int)Ability.InnardsOut =>
                 Revise(criteria, def: criteria.IV_DEF, spd: criteria.IV_SPD),
-            (int)Species.Unown when enc.Generation is 4 => criteria,
+            (int)Species.Unown when enc.Generation is 4 => criteria with { Form = (sbyte)set.Form},
 
             _ => Revise(criteria, atk: criteria.IV_ATK == 0 ? (sbyte)0 : (sbyte)-1, spe: criteria.IV_SPE == 0 ? (sbyte)0 : (sbyte)-1),
         };
@@ -1723,5 +1745,67 @@ public static class APILegality
 
         var res = group.GetVersionsWithinRange(versionlist.ToArray());
         return res.Length > 0 ? res : [version];
+    }
+
+    public static PKM GenerateEgg(this ITrainerInfo dest, ShowdownSet set, out LegalizationResult result)
+    {
+        result = LegalizationResult.Failed;
+        var template = EntityBlank.GetBlank(dest.Generation);
+        template.ApplySetDetails(set);
+        var destVer = dest.Version;
+        if (destVer <= 0 && dest is SaveFile s)
+            destVer = s.Version;
+        if (dest.Generation <= 2)
+            template.EXP = 0; // no relearn moves in gen 1/2 so pass level 1 to generator
+        var encounters = GetAllEncounters(template, template.Moves, [dest.Version]);
+        encounters = encounters.Where(z => z.IsEgg);
+        if (!encounters.Any())
+        {
+            result = LegalizationResult.Failed;
+            return template;
+        }
+        var mutations = EncounterMutationUtil.GetSuggested(dest.Context, set.Level);
+        var criteria = EncounterCriteria.GetCriteria(set, template.PersonalInfo, mutations);
+        foreach (var enc in encounters)
+        {
+            criteria = SetSpecialCriteria(criteria, enc, set);
+
+            // Create the PKM from the template.
+            var raw = enc.GetPokemonFromEncounter(dest, criteria, set);
+            raw.IsEgg = true;
+            raw.CurrentFriendship = (byte)EggStateLegality.GetMinimumEggHatchCycles(raw);
+
+            // if egg wasn't originally obtained by OT => Link Trade, else => None
+            if (raw.Format >= 4)
+            {
+                var sav = dest;
+                bool isTraded = sav.OT != raw.OriginalTrainerName || sav.TID16 != raw.TID16 || sav.SID16 != raw.SID16;
+                var loc = isTraded
+                    ? Locations.TradedEggLocation(sav.Generation, sav.Version)
+                    : LocationEdits.GetNoneLocation(raw);
+                raw.MetLocation = (ushort)loc;
+            }
+            else if (raw is PK3)
+            {
+                raw.Language = (int)LanguageID.Japanese; // japanese;
+            }
+            if (raw is PB8)
+                raw.NicknameTrash.Clear();
+            raw.IsNicknamed = EggStateLegality.IsNicknameFlagSet(raw);
+            raw.Nickname = SpeciesName.GetEggName(raw.Language, raw.Format);
+
+            // Wipe egg memories
+            if (raw.Format >= 6)
+                raw.ClearMemories();
+
+            if (raw is PK9) // Eggs in S/V have a Version value of 0 until hatched.
+                raw.Version = 0;
+            if(new LegalityAnalysis(raw).Valid)
+            {
+                result = LegalizationResult.Regenerated;
+                return raw;
+            }
+        }
+        return template;
     }
 }

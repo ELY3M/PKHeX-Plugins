@@ -63,7 +63,7 @@ public static class ModLogic
     public static IEnumerable<PKM> GenerateLivingDex(this ITrainerInfo sav, IPersonalTable personal, LivingDexConfig cfg)
     {
         var pklist = new ConcurrentBag<PKM>();
-        var tr = APILegality.UseTrainerData ? TrainerSettings.GetSavedTrainerData(sav.Generation) : sav;
+        var tr = APILegality.UseTrainerData ? TrainerSettings.GetSavedTrainerData(sav.Version,sav.Generation) : sav;
         var context = sav.Context;
         var generation = sav.Generation;
         Parallel.For(1, personal.MaxSpeciesID+1, id => //parallel For's end is exclusive
@@ -507,5 +507,23 @@ public static class ModLogic
         }
 
         return result;
+    }
+    public static IEnumerable<PKM> GenerateLivingEggDex(this ITrainerInfo sav, IPersonalTable personal)
+    {
+        var pklist = new ConcurrentBag<PKM>();
+        var tr = APILegality.UseTrainerData ? TrainerSettings.GetSavedTrainerData(sav.Generation) : sav;
+        var context = sav.Context;
+        var generation = sav.Generation;
+        Parallel.For(1, personal.MaxSpeciesID + 1, id => //parallel For's end is exclusive
+        {
+            var s = (Species)id;
+            if (!personal.IsSpeciesInGame((ushort)s))
+                return;
+            var pk = tr.GenerateEgg(new ShowdownSet(s.ToString()), out var result);
+            if (result != LegalizationResult.Regenerated)
+                return;
+            pklist.Add(pk);
+        });
+        return pklist.OrderBy(z => z.Species);
     }
 }

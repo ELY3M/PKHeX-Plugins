@@ -185,7 +185,8 @@ public static class SimpleEdits
             return;
         }
 
-        pk.SetShinySID(); // no mg = no lock
+        TrainerIDVerifier.TryGetShinySID(pk.PID, pk.TID16, pk.Version, out var sid);
+        pk.SID16 = sid;
         if (isShiny && enc.Generation is 1 or 2)
             pk.SetShiny();
         if (enc.Generation != 5)
@@ -546,7 +547,7 @@ public static class SimpleEdits
 
     private static void SetDateLocksWC8(PKM pk, WC8 w)
     {
-        var locked = EncounterServerDate.WC8Gifts.TryGetValue(w.CardID, out var time);
+        var locked = w.GetDistributionWindow(out var time);
         if (locked)
             pk.MetDate = time.Start;
     }

@@ -66,9 +66,10 @@ public sealed class LPBDSP(LiveHeXVersion lv, bool useCache) : InjectionBase(lv,
             throw new Exception("Invalid Pointer string.");
 
         var b = psb.com.ReadBytes(addr, count * 8);
+        if (b[0] == 0)
+            return [];
         var boxptr = ArrayUtil.EnumerateSplit(b.ToArray(), 8).Select(z => ReadUInt64LittleEndian(z)).ToArray()[box] + 0x20; // add 0x20 to remove vtable bytes
         b = sb.ReadBytesAbsolute(boxptr, psb.SlotCount * 8);
-
         var pkmptrs = ArrayUtil.EnumerateSplit(b.ToArray(), 8).Select(z => ReadUInt64LittleEndian(z)).ToArray();
         return pkmptrs;
     }
@@ -131,7 +132,8 @@ public sealed class LPBDSP(LiveHeXVersion lv, bool useCache) : InjectionBase(lv,
             return ArrayUtil.ConcatAll(allpkm.ToArray());
 
         var pkmptrs = GetPokemonPointers(psb, box);
-
+        if (pkmptrs.Length == 0)
+            return ArrayUtil.ConcatAll(allpkm.ToArray());
         var offsets = pkmptrs.ToDictionary(p => p + 0x20, _ => psb.SlotSize);
         return sb.ReadBytesAbsoluteMulti(offsets);
     }
@@ -141,7 +143,10 @@ public sealed class LPBDSP(LiveHeXVersion lv, bool useCache) : InjectionBase(lv,
         if (psb.com is not ICommunicatorNX sb)
             return new byte[psb.SlotSize];
 
-        var pkmptr = GetPokemonPointers(psb, box)[slot];
+        var pkmptrs = GetPokemonPointers(psb, box);
+        if (pkmptrs.Length == 0)
+            return [];
+        var pkmptr = pkmptrs[slot];
         return sb.ReadBytesAbsolute(pkmptr + 0x20, psb.SlotSize);
     }
 
@@ -150,7 +155,10 @@ public sealed class LPBDSP(LiveHeXVersion lv, bool useCache) : InjectionBase(lv,
         if (psb.com is not ICommunicatorNX sb)
             return;
 
-        var pkmptr = GetPokemonPointers(psb, box)[slot];
+        var pkmptrs = GetPokemonPointers(psb, box);
+        if (pkmptrs.Length == 0)
+            return;
+        var pkmptr = pkmptrs[slot];
         sb.WriteBytesAbsolute(data, pkmptr + 0x20);
     }
 
@@ -161,6 +169,8 @@ public sealed class LPBDSP(LiveHeXVersion lv, bool useCache) : InjectionBase(lv,
 
         int size = psb.SlotSize;
         var pkmptrs = GetPokemonPointers(psb, box);
+        if (pkmptrs.Length == 0)
+            return;
         for (int i = 0; i < psb.SlotCount; i++)
             sb.WriteBytesAbsolute(boxData.Slice(i * size, size), pkmptrs[i] + 0x20);
     }
@@ -192,7 +202,7 @@ public sealed class LPBDSP(LiveHeXVersion lv, bool useCache) : InjectionBase(lv,
         // BodyType, Fashion ID
         extra.Slice(0x16, 0x2).CopyTo(retval.AsSpan(0x30));
         // StarterType, DSPlayer, FollowIndex, X, Y, Height, Rotation
-        extra.Slice(0x18).ToArray().CopyTo(retval, 0x34);
+        extra[0x18..].ToArray().CopyTo(retval, 0x34);
 
         return retval;
     };
