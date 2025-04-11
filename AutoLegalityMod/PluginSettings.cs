@@ -48,10 +48,6 @@ public class PluginSettings
     public string LatestIP { get; set; } = "192.168.1.65";
 
     [Category(Connection)]
-    [Description("Stores the last port used by LiveHeX.")]
-    public string LatestPort { get; set; } = "6000";
-
-    [Category(Connection)]
     [Description("Allows LiveHeX to use USB-Botbase instead of sys-botbase.")]
     public bool USBBotBasePreferred { get; set; } = false;
 
@@ -130,14 +126,12 @@ public class PluginSettings
     [Category(LivingDex)]
     [Description("Only generate Pokémon natively available in the game version pair.")]
     public bool NativeOnly { get; set; } = true;
+
     [Category(TransferDex)]
     [Description("Generate Transfer Living Dex destination game")]
     public GameVersion TransferVersion { get; set; } = GameVersion.VL;
-    // Miscellaneous
-    [Category(Miscellaneous)]
-    [Description("Base URL for Flagbrew's Global PKSM Sharing Service (GPSS) features.")]
-    public string GPSSBaseURL { get; set; } = "flagbrew.org";
 
+    // Miscellaneous
     [Category(Miscellaneous)]
     [Description("Used for \"Generate Smogon Sets\". If set to true, ALM will ask for approval for each set before attempting to generate it.")]
     public bool PromptForSmogonImport { get; set; } = false;
@@ -149,7 +143,9 @@ public class PluginSettings
     [Category(Miscellaneous)]
     [Description("Sets IVs of 31 to blue and 30 to red if enabled. Otherwise, sets IVs of 31 to blue and 0 to red.")]
     public bool UseCompetitiveMarkings { get; set; } = true;
+
     [Category(Miscellaneous)]
+    [Description("Sets the types to use when generating a random team of Pokémon.")]
     public MoveType[] RandomTypes { get; set; } = [];
 
     // Development
@@ -164,7 +160,7 @@ public class PluginSettings
     {
         JsonSerializerOptions options = new() { WriteIndented = true };
         string output = JsonSerializer.Serialize(this, options);
-        using StreamWriter sw = new(ConfigPath ?? Path.Combine( Path.GetDirectoryName(Environment.ProcessPath)!, "almconfig.json"));
+        using StreamWriter sw = new(Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!, "almconfig.json"));
         sw.WriteLine(output);
     }
 }

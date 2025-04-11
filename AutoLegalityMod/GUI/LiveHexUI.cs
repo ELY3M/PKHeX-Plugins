@@ -43,7 +43,7 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
 
         TB_IP.Text = _settings.LatestIP;
         var default_port = RamOffsets.IsSwitchTitle(sav.SAV) ? 6000 : 8000; // default port for loaded save
-        TB_Port.Text = int.Parse(_settings.LatestPort) is 6000 or 8000 ? default_port.ToString() : _settings.LatestPort;
+        TB_Port.Text = default_port.ToString();
         SetInjectionTypeView();
 
         // add an event to the editor
@@ -80,7 +80,7 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
 
         if (!type.IsContentChange())
             return;
-
+        SAV.SAV.AdaptToSaveFile(pkm);
         Remote.Bot.SendSlot(RamOffsets.WriteBoxData(Remote.Bot.Version) ? pkm.EncryptedBoxData : pkm.EncryptedPartyData, box, slotpkm);
     }
 
@@ -355,7 +355,6 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
 
         x.Slots.Publisher.Subscribers.Remove(this);
         _settings.LatestIP = TB_IP.Text;
-        _settings.LatestPort = TB_Port.Text;
         _settings.Save();
     }
 
@@ -928,10 +927,10 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
         {
             LiveHeXValidation.Botbase when nx.Protocol is InjectorCommunicationType.SocketNetwork => "https://github.com/olliz0r/sys-botbase/releases/latest",
             LiveHeXValidation.Botbase when nx.Protocol is InjectorCommunicationType.USB => "https://github.com/Koi-3088/usb-botbase/releases/latest",
-            LiveHeXValidation.BlankSAV => "https://github.com/santcrab2/PKHeX-Plugins/wiki/FAQ-and-Troubleshooting#pkhex-plugins-is-telling-me-that-the-detected-game-does-not-match-the-current-save-file-the-top-of-the-window-says-forced-for-the-game-version",
-            LiveHeXValidation.GameVersion => "https://github.com/santcrab2/PKHeX-Plugins/wiki/FAQ-and-Troubleshooting#pkhex-plugins-is-telling-me-that-the-detected-game-does-not-match-the-current-save-file-the-top-of-the-window-says-forced-for-the-game-version",
-            LiveHeXValidation.RAMShift => "https://github.com/santcrab2/PKHeX-Plugins/wiki/FAQ-and-Troubleshooting#pkhex-plugins-is-telling-me-that-a-possible-ram-shift-is-detected",
-            _ => "https://github.com/santcrab2/PKHeX-Plugins/wiki/FAQ-and-Troubleshooting#troubleshooting",
+            LiveHeXValidation.BlankSAV => "https://github.com/santacrab2/PKHeX-Plugins/wiki/FAQ-and-Troubleshooting#pkhex-plugins-is-telling-me-that-the-detected-game-does-not-match-the-current-save-file-the-top-of-the-window-says-forced-for-the-game-version",
+            LiveHeXValidation.GameVersion => "https://github.com/santacrab2/PKHeX-Plugins/wiki/FAQ-and-Troubleshooting#pkhex-plugins-is-telling-me-that-the-detected-game-does-not-match-the-current-save-file-the-top-of-the-window-says-forced-for-the-game-version",
+            LiveHeXValidation.RAMShift => "https://github.com/santacrab2/PKHeX-Plugins/wiki/FAQ-and-Troubleshooting#pkhex-plugins-is-telling-me-that-a-possible-ram-shift-is-detected",
+            _ => "https://github.com/santacrab2/PKHeX-Plugins/wiki/FAQ-and-Troubleshooting#troubleshooting",
         };
 
         switch (validation)
