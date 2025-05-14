@@ -30,11 +30,11 @@ public static class APILegality
     public static bool AllowTrainerOverride { get; set; }
     public static bool AllowBatchCommands { get; set; } = true;
     public static bool ForceLevel100for50 { get; set; } = true;
-    public static bool AllowHOMETransferGeneration { get; set; } = true;
+    public static BattleTemplateDisplayStyle ExportFormat { get; set; } = BattleTemplateDisplayStyle.Showdown;
     public static MoveType[] RandTypes { get; set; } = [];
     public static int Timeout { get; set; } = 15;
 
-    private static bool AllowHOME => ParseSettings.Settings.HOMETransfer.HOMETransferTrackerNotPresent != Severity.Invalid;
+    public static bool AllowHOME => ParseSettings.Settings.HOMETransfer.HOMETransferTrackerNotPresent != Severity.Invalid;
 
     /// <summary>
     /// Main function that auto legalizes based on the legality
@@ -72,6 +72,8 @@ public static class APILegality
         var native = ModLogic.Config.NativeOnly && nativeOnly;
         var destType = template.GetType();
         var destVer = dest.Version;
+        if (destVer == GameVersion.HGSS)
+            destVer = GameVersion.SS; // HGSS as the destination version returns 0 for maxGameSpeciesID which then fails dest.ExistsInGame check.
         if (destVer <= 0 && dest is SaveFile s)
             destVer = s.Version;
         if (dest.Generation <= 2)
@@ -152,9 +154,6 @@ public static class APILegality
             // Bring to the target generation and filter
             var pk = EntityConverter.ConvertToType(raw, destType, out _);
             if (pk == null)
-                continue;
-
-            if (!EntityConverter.IsCompatibleGB(pk, template.Japanese, pk.Japanese))
                 continue;
 
             if (dest.Generation >= 8 && HomeTrackerUtil.IsRequired(enc, pk) && !AllowHOME)
@@ -300,7 +299,7 @@ public static class APILegality
         if (batchEdit && set is RegenTemplate { Regen.VersionFilters: { Count: not 0 } x } && TryGetSingleVersion(x, out var single))
             return single;
 
-        var versionlist = GameUtil.GetVersionsWithinRange(template, template.Format);
+        var versionlist = GameUtil.GetVersionsWithinRange(template, template.Generation);
         var gamelist = !nativeOnly ? [.. versionlist.OrderByDescending(c => c.GetGeneration())] : GetPairedVersions(destVer, versionlist);
         if (PrioritizeGame)
             gamelist = PrioritizeGameVersion == GameVersion.Any ? PrioritizeVersion(gamelist, destVer.GetIsland()) : PrioritizeVersion(gamelist, PrioritizeGameVersion);
@@ -472,7 +471,7 @@ public static class APILegality
             switch (enc.Generation)
             {
                 case 6 when set.Form != (enc is EncounterStatic6 ? enc.Form : 0):
-                case >= 7 when set.Form != (enc is EncounterInvalid or EncounterEgg ? 0 : enc.Form):
+                case >= 7 when set.Form != (enc is EncounterInvalid or IEncounterEgg ? 0 : enc.Form):
                     return false;
             }
         }
@@ -555,7 +554,7 @@ public static class APILegality
         IOverworldCorrelation8 o when o.GetRequirement(pk) == OverworldCorrelation8Requirement.MustHave => true,
         IStaticCorrelation8b s when s.GetRequirement(pk) == StaticCorrelation8bRequirement.MustHave => true,
         EncounterSlot3 when pk.Species == (ushort)Species.Unown => true,
-        EncounterEgg when GameVersion.BDSP.Contains(enc.Version) => true,
+        EncounterEgg8b => true,
         EncounterGift3 when pk.Species == (ushort)Species.Jirachi => true, //PKHeX handles this now for both Wishmkr and CHANNEL
         _ => false,
     };
@@ -607,7 +606,7 @@ public static class APILegality
         pk.SetMovesEVs(set, enc);
         pk.SetCorrectMetLevel(enc);
         pk.SetGVs();
-        pk.SetHyperTrainingFlags(set, enc);
+        pk.SetHyperTrainingFlags(set, enc, criteria);
         pk.SetEncryptionConstant(enc);
         pk.SetShinyBoolean(set.Shiny, enc, regen.Extra.ShinyType);
         pk.FixGender(set);
@@ -710,7 +709,7 @@ public static class APILegality
     /// <param name="pk">passed pkm object</param>
     /// <param name="set">showdown set to base hyper training on</param>
     /// <param name="enc"></param>
-    private static void SetHyperTrainingFlags(this PKM pk, IBattleTemplate set, IEncounterTemplate enc)
+    private static void SetHyperTrainingFlags(this PKM pk, IBattleTemplate set, IEncounterTemplate enc, EncounterCriteria criteria)
     {
         if (pk is not IHyperTrain t || pk.Species == (ushort)Species.Stakataka)
             return;
@@ -722,7 +721,7 @@ public static class APILegality
         if (t.GetHyperTrainMinLevel(history, pk.Context) > pk.CurrentLevel)
             return;
 
-        t.HyperTrain(pk, set.IVs);
+        t.HyperTrain(pk, set.IVs, criteria);
 
         // Handle special cases here for ultrabeasts
         switch (pk.Species)
@@ -808,7 +807,8 @@ public static class APILegality
             pk.Language = tr.Language;
             pk.SetTrainerData(tr);
         }
-        pk.EggLocation = Locations.TradedEggLocation(enc.Generation, enc.Version);
+        if (pk.Species is not (ushort)Species.Manaphy)
+            pk.EggLocation = Locations.TradedEggLocation(enc.Generation, enc.Version);
     }
 
     /// <summary>
@@ -871,8 +871,10 @@ public static class APILegality
         switch (enc)
         {
             case EncounterSlot3XD:
+            case EncounterShadow3XD:
+            case EncounterShadow3Colo:
             case PCD:
-            case EncounterEgg:
+            case IEncounterEgg:
                 return;
             // EncounterTrade4 doesn't have fixed PIDs, so don't early return
             case EncounterTrade3:
@@ -959,7 +961,7 @@ public static class APILegality
             if (!SimpleEdits.TryApplyHardcodedSeedWild8(pk8, enc, cloned, shiny))
                 FindWildPIDIV8(pk8, shiny, flawless);
         }
-        else if (enc is EncounterEgg && GameVersion.BDSP.Contains(enc.Version))
+        else if (enc is EncounterEgg8b)
         {
             pk.SetIVs(set.IVs);
             Shiny shiny = set is RegenTemplate r ? r.Regen.Extra.ShinyType : set.Shiny ? Shiny.Always : Shiny.Never;
@@ -1411,6 +1413,8 @@ public static class APILegality
             return false;
         if (Method == PIDType.Pokewalker)
             return false;
+        if (pk.Version == GameVersion.CXD && Method == PIDType.CXD)
+            return false;
         if (!new LegalityAnalysis(pk).Valid)
             return false;
         return true;
@@ -1501,7 +1505,7 @@ public static class APILegality
         if (!wasMetLost)
             return;
 
-        if (new LegalityAnalysis(pk).Info.Moves.All(z => z.Valid))
+        if (new LegalityAnalysis(pk).Info.Moves.All(z => z.Valid) && pk.Species != (ushort)Species.Shedinja)
             return; // Not an issue with moves
 
         pk.MetLevel = current;
@@ -1572,7 +1576,7 @@ public static class APILegality
     /// </summary>
     public static EncounterCriteria SetSpecialCriteria(EncounterCriteria criteria, IEncounterTemplate enc, IBattleTemplate set)
     {
-        if (enc is EncounterEgg && enc.Version is not (GameVersion.BD or GameVersion.SP))
+        if (enc is IEncounterEgg && enc is not EncounterEgg8b)
             return criteria;
         if (enc is EncounterStatic8U)
             criteria = criteria with { Shiny = Shiny.Never };
@@ -1723,7 +1727,7 @@ public static class APILegality
             _ => GameUtil.GetMetLocationVersionGroup(version),
         };
 
-        var res = group.GetVersionsWithinRange(versionlist.ToArray());
+        var res = versionlist.Where(v => group.Contains(v)).ToArray();
         return res.Length > 0 ? res : [version];
     }
 

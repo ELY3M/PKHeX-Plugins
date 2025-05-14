@@ -42,7 +42,18 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
         this.TranslateInterface(WinFormsTranslator.CurrentLanguage);
 
         TB_IP.Text = _settings.LatestIP;
-        var default_port = RamOffsets.IsSwitchTitle(sav.SAV) ? 6000 : 8000; // default port for loaded save
+
+        // Default Wi-Fi ports for loaded save, 6000 for Switch, 8000 for 3DS
+        var default_port = RamOffsets.IsSwitchTitle(sav.SAV) ? 6000 : 8000;
+
+        if (_settings.USBBotBasePreferred)
+        {
+            // Only use the saved port if using USB-Botbase
+            if (int.TryParse(_settings.LatestPort, out int port))
+                default_port = port;
+            // Allow editing of the port field.
+            TB_Port.ReadOnly = false;
+        }
         TB_Port.Text = default_port.ToString();
         SetInjectionTypeView();
 
@@ -255,7 +266,7 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
             var data = Remote.Bot.ReadSlot(0, 0);
             var pkm = SAV.SAV.GetDecryptedPKM(data.ToArray());
             bool valid = pkm.Species <= pkm.MaxSpeciesID && pkm.ChecksumValid &&
-                         pkm is { Species: 0, EncryptionConstant: 0 } or { Species: not 0, Language: not (int)LanguageID.Hacked and not (int)LanguageID.UNUSED_6 };
+                         pkm is { Species: 0, EncryptionConstant: 0 } or { Species: not 0, Language: not (int)LanguageID.None and not (int)LanguageID.UNUSED_6 };
             if (valid)
                 return (LiveHeXValidation.None, "", version);
         }
@@ -315,7 +326,7 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
         PKM? pkm = SAV.SAV.GetDecryptedPKM(data.ToArray());
         bool valid = pkm is not null && pkm.Species <= pkm.MaxSpeciesID && pkm.ChecksumValid &&
                      pkm is { Species: 0, EncryptionConstant: 0 }
-                         or { Species: not 0, Language: not (int)LanguageID.Hacked and not (int)LanguageID.UNUSED_6 };
+                         or { Species: not 0, Language: not (int)LanguageID.None and not (int)LanguageID.UNUSED_6 };
         return !_settings.EnableDevMode && !valid && InjectionBase.CheckRAMShift(Remote.Bot, out string err) ? (LiveHeXValidation.RAMShift, err, lv) : !valid ? (LiveHeXValidation.GameVersion,"Invalid data found.",LiveHeXVersion.Unknown): (LiveHeXValidation.None, "", lv);
     }
 
@@ -355,6 +366,9 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
 
         x.Slots.Publisher.Subscribers.Remove(this);
         _settings.LatestIP = TB_IP.Text;
+        // Only save the port if using USB-Botbase
+        if (_settings.USBBotBasePreferred)
+            _settings.LatestPort = TB_Port.Text;
         _settings.Save();
     }
 

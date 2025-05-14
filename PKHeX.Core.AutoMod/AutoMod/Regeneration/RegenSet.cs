@@ -8,7 +8,7 @@ namespace PKHeX.Core.AutoMod;
 
 public sealed class RegenSet
 {
-    public static readonly RegenSet Default = new([], PKX.Generation);
+    public static readonly RegenSet Default = new([], Latest.Generation);
 
     public RegenSetting Extra { get; }
     public ITrainerInfo? Trainer { get; }
@@ -74,7 +74,7 @@ public sealed class RegenSet
         for (int i = 0; i < lines.Count;)
         {
             var line = lines[i];
-            var sanitized = line.Replace(">=", "≥").Replace("<=", "≤");
+            var sanitized = line.Replace(">=", "≥").Replace("<=", "≤").Replace("Unknown Token: ","");
             if (StringInstruction.TryParseInstruction(sanitized, out var mod))
             {
                 mods.Add(mod);
