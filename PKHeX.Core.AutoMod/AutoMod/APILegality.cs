@@ -25,7 +25,7 @@ public static class APILegality
     public static bool EnableDevMode { get; set; }
     public static string LatestAllowedVersion { get; set; } = "0.0.0.0";
     public static bool PrioritizeGame { get; set; } = true;
-    public static GameVersion PrioritizeGameVersion { get; set; }
+    public static List<GameVersion> PriorityOrder { get; set; } = [];
     public static bool SetBattleVersion { get; set; }
     public static bool AllowTrainerOverride { get; set; }
     public static bool AllowBatchCommands { get; set; } = true;
@@ -71,7 +71,7 @@ public static class APILegality
         var batchedit = AllowBatchCommands && regen.HasBatchSettings;
         var native = ModLogic.Config.NativeOnly && nativeOnly;
         var destType = template.GetType();
-        var destVer = dest.Version;
+        var destVer = dest.GetSingleVersion();
         if (destVer == GameVersion.HGSS)
             destVer = GameVersion.SS; // HGSS as the destination version returns 0 for maxGameSpeciesID which then fails dest.ExistsInGame check.
         if (destVer <= 0 && dest is SaveFile s)
@@ -94,7 +94,7 @@ public static class APILegality
             encounters = encounters.Where(enc => enc is (IGenerateSeed32 or IGenerateSeed64)); // Only allow seed generation for seed encounters
         if (ogenc is not null)
             encounters = encounters.OrderByDescending(e => e == ogenc);
-        if (set.Shiny)
+        if (set.Shiny && set.Species == (ushort)Species.Keldeo) //Keldeo seems to be the only recent shiny unlock impacted by this encounter order failure, add edge case for it until a better solution can be found
             encounters = encounters.OrderByDescending(e => e.Shiny == Shiny.Always);
         PKM? last = null;
         var timer = Stopwatch.StartNew();
@@ -304,7 +304,7 @@ public static class APILegality
         var versionlist = GameUtil.GetVersionsWithinRange(template, template.Generation);
         var gamelist = !nativeOnly ? [.. versionlist.OrderByDescending(c => c.GetGeneration())] : GetPairedVersions(destVer, versionlist);
         if (PrioritizeGame)
-            gamelist = PrioritizeGameVersion == GameVersion.Any ? PrioritizeVersion(gamelist, destVer.GetIsland()) : PrioritizeVersion(gamelist, PrioritizeGameVersion);
+            gamelist = [..PriorityOrder.Where(z=>versionlist.Contains(z))];
 
         if (template.AbilityNumber == 4 && destVer.GetGeneration() < 8)
             gamelist = [.. gamelist.Where(z => z.GetGeneration() is not 3 and not 4)];
@@ -610,7 +610,7 @@ public static class APILegality
         pk.SetGVs();
         pk.SetHyperTrainingFlags(set, enc, criteria);
         pk.SetEncryptionConstant(enc);
-        pk.SetShinyBoolean(set.Shiny, enc, regen.Extra.ShinyType);
+        pk.SetShinyBoolean(set.Shiny, enc, regen.Extra.ShinyType,pidiv.Type,criteria);
         pk.FixGender(set);
 
         // Final tweaks
@@ -844,11 +844,11 @@ public static class APILegality
         if (changeEC)
             pk.SetRandomEC(); // break correlation
 
-        if (enc is MysteryGift mg)
+        if (enc is MysteryGift mg && enc.Species != (ushort)Species.Manaphy)
         {
-            Span<int> ivs = [];
+            Span<int> ivs = stackalloc int[6];
             pk.GetIVs(ivs);
-            Span<int> mgIvs = [];
+            Span<int> mgIvs = stackalloc int[6];
             mg.GetIVs(mgIvs);
             for (int i = 0; i < mgIvs.Length; i++)
                 ivs[i] = mgIvs[i] > 31 ? set.IVs[i] : mgIvs[i];
@@ -886,8 +886,6 @@ public static class APILegality
                 pk.SetEncounterTradeIVs();
                 return; // Fixed PID, no need to mutate
             default:
-                FindPIDIV(pk, method, hpType, set.Shiny, enc, set);
-                ValidateGender(pk, enc);
                 break;
         }
 
@@ -1318,83 +1316,7 @@ public static class APILegality
         return template.Shiny == pk.IsShiny;
     }
 
-    /// <summary>
-    /// Method to set PID, IV while validating nature.
-    /// </summary>
-    /// <param name="pk">PKM to modify</param>
-    /// <param name="method">Given Method</param>
-    /// <param name="hiddenPower">HPType INT for preserving Hidden powers</param>
-    /// <param name="shiny">Only used for CHANNEL RNG type</param>
-    /// <param name="enc"></param>
-    /// <param name="set"></param>
-    private static void FindPIDIV(PKM pk, PIDType method, int hiddenPower, bool shiny, IEncounterTemplate enc, IBattleTemplate set)
-    {
-        if (method == PIDType.None)
-        {
-            method = FindLikelyPIDType(enc);
-            if (method == PIDType.None && enc.Generation >= 3)
-                pk.SetPIDGender(pk.Gender);
-        }
-        switch (method)
-        {
-            case PIDType.Method_1_Roamer when pk.HPType != (int)MoveType.Fighting - 1: // M1 Roamers can only be HP fighting
-            case PIDType.Pokewalker when (pk.Nature >= Nature.Quirky || pk.AbilityNumber == 4): // No possible pokewalker matches
-                return;
-        }
-        var request = pk.Clone();
-        // Requested Pokémon may be an evolution, guess index based on requested species ability
-        var ability_idx = GetRequiredAbilityIdx(request, set);
-
-        if (request.AbilityNumber >> 1 != ability_idx && set.Ability != -1 && ability_idx != -1)
-            request.SetAbilityIndex(ability_idx);
-
-        var count = 0;
-        var compromise = false;
-        var gr = pk.PersonalInfo.Gender;
-        if (IsMatchFromPKHeX(pk, request, hiddenPower, gr, method))
-            return;
-        do
-        {
-            if (count >= 2_500_000 && enc.Species != (ushort)Species.Unown)
-                compromise = true;
-
-            if (PokeWalkerSeedFail(Util.Rand32(), method, pk, request))
-                continue;
-            PIDGenerator.SetValuesFromSeed(pk, method, Util.Rand32());
-            if (pk.AbilityNumber != request.AbilityNumber )
-                continue;
-            if (!compromise && pk.Nature != request.Nature)
-                continue;
-            if (pk.PIDAbility != request.PIDAbility)
-                continue;
-
-            if (hiddenPower >= 0 && pk.HPType != hiddenPower)
-                continue;
-
-            if (pk.PID % 25 != (int)request.Nature) // Util.Rand32 is the way to go
-                continue;
-
-            if (pk.Gender != EntityGender.GetFromPIDAndRatio(pk.PID, gr))
-                continue;
-
-            if (pk.Version == GameVersion.CXD && method == PIDType.CXD) // verify locks
-            {
-                pk.EncryptionConstant = pk.PID;
-                var ec = pk.PID;
-                bool xorPID = ((pk.TID16 ^ pk.SID16 ^ (int)(ec & 0xFFFF) ^ (int)(ec >> 16)) & ~0x7) == 8;
-                if (enc is EncounterStatic3XD && enc.Species == (int)Species.Eevee && (shiny != pk.IsShiny || xorPID)) // Starter Correlation
-                    continue;
-
-                var la = new LegalityAnalysis(pk);
-                if (la.Info.PIDIV.Type is not PIDType.CXD and not PIDType.CXD_ColoStarter || !la.Info.PIDIVMatches || !pk.IsValidGenderPID(enc))
-                    continue;
-            }
-            if (pk.TID16 == 06930 && !MystryMew.IsValidSeed(Util.Rand32()))
-                continue;
-
-            break;
-        } while (++count < 5_000_000);
-    }
+    
 
     private static bool IsMatchFromPKHeX(PKM pk, PKM request, int hiddenPower, byte gr, PIDType Method)
     {

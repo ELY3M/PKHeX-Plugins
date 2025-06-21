@@ -233,13 +233,18 @@ public static class ShowdownSetLoader
         APILegality.UseMarkings = settings.UseMarkings;
         APILegality.EnableDevMode = settings.EnableDevMode;
         APILegality.PrioritizeGame = settings.PrioritizeGame;
-        APILegality.PrioritizeGameVersion = settings.PriorityGameVersion;
+        GameVersion[] validVersions = [.. Enum.GetValues<GameVersion>().Where(ver => ver <= (GameVersion)51 && ver > GameVersion.Any)];
+        foreach (var ver in validVersions)
+        {
+            if (!settings.PriorityOrder.Contains(ver))
+                settings.PriorityOrder.Add(ver);
+        }
+        APILegality.PriorityOrder = settings.PriorityOrder;
         APILegality.SetBattleVersion = settings.SetBattleVersion;
         APILegality.AllowTrainerOverride = settings.AllowTrainerOverride;
         APILegality.Timeout = settings.Timeout;
         APILegality.ForceLevel100for50 = settings.ForceLevel100for50;
         APILegality.ExportFormat = settings.ExportFormat;
-        //APILegality.AllowHOMETransferGeneration = settings.AllowHOMETransferGeneration;
         APILegality.RandTypes = settings.RandomTypes;
         Legalizer.EnableEasterEggs = settings.EnableEasterEggs;
         SmogonGenner.PromptForImport = settings.PromptForSmogonImport;
