@@ -72,8 +72,6 @@ public static class APILegality
         var native = ModLogic.Config.NativeOnly && nativeOnly;
         var destType = template.GetType();
         var destVer = dest.GetSingleVersion();
-        if (destVer == GameVersion.HGSS)
-            destVer = GameVersion.SS; // HGSS as the destination version returns 0 for maxGameSpeciesID which then fails dest.ExistsInGame check.
         if (destVer <= 0 && dest is SaveFile s)
             destVer = s.Version;
         if (dest.Generation <= 2)
@@ -392,7 +390,6 @@ public static class APILegality
     private static ITrainerInfo GetTrainer(RegenSet regen, IEncounterTemplate enc, IBattleTemplate set, ITrainerInfo dest)
     {
         var ver = enc.Version;
-        var gen = enc.Generation;
         var mutate = regen.Extra.Language;
 
         // Edge case override for Meister Magikarp
@@ -403,32 +400,7 @@ public static class APILegality
         if (AllowTrainerOverride && regen is { HasTrainerSettings: true, Trainer: not null })
             return regen.Trainer.MutateLanguage(mutate, ver);
 
-        return UseTrainerData ? TrainerSettings.GetSavedTrainerData(ver, gen).MutateLanguage(mutate, ver) : TrainerSettings.DefaultFallback(ver, regen.Extra.Language??(LanguageID)dest.Language);
-    }
-
-    /// <summary>
-    /// Gives the currently loaded save priority over other saves in the same generation. Otherwise, generational order is preserved
-    /// </summary>
-    /// <param name="gamelist">Array of GameVersion which needs to be prioritized</param>
-    /// <param name="game">GameVersion to prioritize</param>
-    /// <returns>A prioritized GameVersion list</returns>
-    private static GameVersion[] PrioritizeVersion(ReadOnlySpan<GameVersion> gamelist, GameVersion game)
-    {
-        var matched = 0;
-        var retval = new List<GameVersion>();
-        foreach (GameVersion poss in gamelist)
-        {
-            if (poss == game || game.Contains(poss))
-            {
-                retval.Insert(matched, poss);
-                matched++;
-            }
-            else
-            {
-                retval.Add(poss);
-            }
-        }
-        return [.. retval];
+        return UseTrainerData ? TrainerSettings.GetSavedTrainerData(ver).MutateLanguage(mutate, ver) : TrainerSettings.DefaultFallback(ver, regen.Extra.Language??(LanguageID)dest.Language);
     }
 
     /// <summary>
@@ -570,11 +542,9 @@ public static class APILegality
     private static PKM SanityCheckLocation(this PKM pk, IEncounterTemplate enc)
     {
         const int SharedNest = 162; // Shared Nest for online encounter
-        const int MaxLair = 244; // Dynamax Adventures
         pk.MetLocation = enc switch
         {
             EncounterStatic8N or EncounterStatic8ND or EncounterStatic8NC => SharedNest,
-            EncounterStatic8U => MaxLair,
             _ => pk.MetLocation,
         };
         return pk;
@@ -626,54 +596,6 @@ public static class APILegality
         pk.SetSuggestedBall(enc, SetMatchingBalls, ForceSpecifiedBall, regen.Extra.Ball);
         pk.ApplyMarkings(UseMarkings);
         pk.ApplyBattleVersion(handler);
-    }
-
-    /// <summary>
-    /// Validate and Set the gender if needed
-    /// </summary>
-    /// <param name="pk">PKM to modify</param>
-    /// <param name="enc"></param>
-    private static void ValidateGender(PKM pk, IEncounterTemplate enc)
-    {
-        bool genderValid = pk.IsGenderValid();
-        if (!genderValid)
-        {
-            if (pk is { Format: 4, Species: (ushort)Species.Shedinja }) // Shedinja glitch
-            {
-                // should match original gender
-                var gender = EntityGender.GetFromPIDAndRatio(pk.PID, 0x7F); // 50-50
-                if (gender == pk.Gender)
-                    genderValid = true;
-            }
-            else if (pk is { Format: > 5, Species: (ushort)Species.Marill or (ushort)Species.Azumarill })
-            {
-                var gv = pk.PID & 0xFF;
-                if (gv > 63 && pk.Gender == 1) // evolved from Azurill after transferring to keep gender
-                    genderValid = true;
-            }
-        }
-        else
-        {
-            // check for mixed->fixed gender incompatibility by checking the gender of the original species
-            if (SpeciesCategory.IsFixedGenderFromDual(pk.Species) && pk.Gender != 2) // Shedinja
-                pk.Gender = EntityGender.GetFromPID(enc.Species, pk.EncryptionConstant);
-            // genderValid = true; already true if we reach here
-        }
-        if (genderValid)
-            return;
-
-        switch (pk.Gender)
-        {
-            case 0:
-                pk.Gender = 1;
-                break;
-            case 1:
-                pk.Gender = 0;
-                break;
-            default:
-                pk.GetSaneGender();
-                break;
-        }
     }
 
     /// <summary>
@@ -932,11 +854,6 @@ public static class APILegality
             if (set.TeraType != MoveType.Any && set.TeraType != pk9.TeraType)
                 pk9.SetTeraType(set.TeraType);
         }
-        else if (enc is EncounterStatic8U && set.Shiny)
-        {
-            // Dynamax Adventure shinies are always XOR 1 (thanks santacrab!)
-            pk.PID = SimpleEdits.GetShinyPID(pk.TID16, pk.SID16, pk.PID, 1);
-        }
         else if (enc is IOverworldCorrelation8 eo)
         {
             if (eo.GetRequirement(pk) != OverworldCorrelation8Requirement.MustHave)
@@ -961,12 +878,6 @@ public static class APILegality
             var shiny = set is RegenTemplate r ? r.Regen.Extra.ShinyType : set.Shiny ? Shiny.Always : Shiny.Never;
             if (!SimpleEdits.TryApplyHardcodedSeedWild8(pk8, enc, cloned, shiny))
                 FindWildPIDIV8(pk8, shiny, flawless);
-        }
-        else if (enc is EncounterEgg8b)
-        {
-            pk.SetIVs(set.IVs);
-            Shiny shiny = set is RegenTemplate r ? r.Regen.Extra.ShinyType : set.Shiny ? Shiny.Always : Shiny.Never;
-            FindEggPIDIV8b(pk, shiny, criteria, enc);
         }
         else if (enc is EncounterSlot3 { Species: (ushort)Species.Unown } enc3)
         {
@@ -1020,16 +931,16 @@ public static class APILegality
             {
                 var tid = (ushort)fakeTID;
                 var sid = (ushort)(fakeTID >> 16);
-                if (!ShinyUtil.GetIsShiny(fakeTID, pid)) // battled
+                if (!ShinyUtil.GetIsShiny6(fakeTID, pid)) // battled
                     pid = ShinyUtil.GetShinyPID(tid, sid, pid, 0);
-                if (!ShinyUtil.GetIsShiny(pk.ID32, pid)) // captured
+                if (!ShinyUtil.GetIsShiny6(pk.ID32, pid)) // captured
                     pid = ShinyUtil.GetShinyPID(pk.TID16, pk.SID16, pid, ShinyUtil.GetShinyXor(pid, fakeTID) == 0 ? 0u : 1u);
             }
             else // Never
             {
-                if (ShinyUtil.GetIsShiny(fakeTID, pid)) // battled
+                if (ShinyUtil.GetIsShiny6(fakeTID, pid)) // battled
                     pid ^= 0x1000_0000;
-                if (ShinyUtil.GetIsShiny(pk.ID32, pid)) // captured
+                if (ShinyUtil.GetIsShiny6(pk.ID32, pid)) // captured
                     pid ^= 0x1000_0000;
             }
             pk.PID = pid;
@@ -1191,117 +1102,6 @@ public static class APILegality
         pk.HeightScalar = (byte)height;
         pk.WeightScalar = (byte)weight;
     }
-
-    /// <summary>
-    /// Egg PID IVs being set through XOROSHIRO1288b
-    /// </summary>
-    /// <param name="pk">Pokémon to edit</param>
-    /// <param name="shiny">Shinytype requested</param>
-    /// <param name="criteria"></param>
-    public static void FindEggPIDIV8b(PKM pk, Shiny shiny, EncounterCriteria criteria, IEncounterTemplate enc)
-    {
-        Span<int> ivs = stackalloc int[6];
-        ReadOnlySpan<int> requiredIVs = [pk.IV_HP, pk.IV_ATK, pk.IV_DEF, pk.IV_SPA, pk.IV_SPD, pk.IV_SPE];
-        var pi = PersonalTable.BDSP.GetFormEntry(enc.Species, enc.Form);
-        var ratio = pi.Gender;
-        var species = enc.Species;
-
-        Span<uint> randomivs = stackalloc uint[6];
-        while (true)
-        {
-            var seed = (ulong)(int)Util.Rand32(); // sign extend when casting to ulong
-            var rng = new Xoroshiro128Plus8b(seed);
-
-            var nido = (uint)(species - (int)Species.NidoranF) / 3;
-            if (nido < 2)
-            {
-                // 0: M, 1: F. nido is F=0; reject if equals (mismatch).
-                if (rng.NextUInt(2) == nido)
-                    continue;
-            }
-            else if (species is (int)Species.Illumise or (int)Species.Volbeat)
-            {
-                // 0: M, 1: F. Delta is F=0, reject if equals (mismatch).
-                if (rng.NextUInt(2) == (int)Species.Illumise - species)
-                    continue;
-            }
-            else if (species == (int)Species.Indeedee)
-            {
-                if (rng.NextUInt(2) != enc.Form)
-                    continue;
-            }
-
-            if (ratio is not (PersonalInfo.RatioMagicMale or PersonalInfo.RatioMagicFemale or PersonalInfo.RatioMagicGenderless))
-            {
-                var rand = rng.NextUInt(252) + 1;
-                if (criteria.IsSpecifiedGender())
-                {
-                    var roll = rand < ratio ? 1 : 0;
-                    if ((byte)criteria.Gender != roll)
-                        continue;
-                }
-            }
-
-            // nature
-            _ = rng.NextUInt(25); // Assume one parent always carries an Everstone.
-
-            // ability
-            _ = rng.NextUInt(100); // Ability can be changed using Capsule/Patch (Assume parent is ability 0/1).
-
-            // The game does a rand(6) to decide which IV's inheritance to check.
-            // If that IV isn't marked to inherit from a parent, it does a rand(2) to pick the parent.
-            // When generating egg IVs, it first randomly fills in the egg IVs with rand(32) x6, then overwrites with parent IVs based on tracking.
-            // We'll assume both parents have the perfect IVs and copy over the parent IV as it's inherited, then fill in blanks afterward.
-
-            // assume other parent always has destiny knot
-            const int inheritCount = 5;
-            var inherited = 0;
-            ivs.Fill(-1);
-            while (inherited < inheritCount)
-            {
-                var stat = (int)rng.NextUInt(6); // Decides which IV to check.
-                if (ivs[stat] != -1) // Only -1 if not already inherited.
-                    continue;
-
-                _ = rng.NextUInt(2); // Decides which parent's IV to inherit. Assume both parents have the same desired IVs.
-                ivs[stat] = requiredIVs[stat];
-                inherited++;
-            }
-
-            // Roll all 6 IVs. Parent inheritance will override.
-            for (int i = 0; i < randomivs.Length; i++)
-                randomivs[i] = rng.NextUInt(32);
-            for (int i = 0; i < 6; i++)
-            {
-                if (ivs[i] == -1)
-                    ivs[i] = (int)randomivs[i];
-            }
-
-            if (!criteria.IsIVsCompatibleSpeedLast(ivs))
-                continue;
-            pk.IV_HP = ivs[0];
-            pk.IV_ATK = ivs[1];
-            pk.IV_DEF = ivs[2];
-            pk.IV_SPA = ivs[3];
-            pk.IV_SPD = ivs[4];
-            pk.IV_SPE = ivs[5];
-
-            pk.EncryptionConstant = rng.NextUInt();
-
-            // PID dissociated completely (assume no masuda and no shiny charm)
-            if (shiny is Shiny.Never or Shiny.Random)
-            {
-                pk.SetUnshiny();
-            }
-            else
-            {
-                pk.PID = SimpleEdits.GetShinyPID(pk.TID16, pk.SID16, pk.PID, shiny == Shiny.AlwaysSquare ? 0 : 1);
-            }
-
-            break;
-        }
-    }
-
     private static bool IsMatchCriteria9(PK9 pk, IBattleTemplate template, EncounterCriteria criteria, bool compromise = false)
     {
         // compromise on nature since they can be minted
@@ -1315,34 +1115,6 @@ public static class APILegality
             return false;
         return template.Shiny == pk.IsShiny;
     }
-
-    
-
-    private static bool IsMatchFromPKHeX(PKM pk, PKM request, int hiddenPower, byte gr, PIDType Method)
-    {
-        if (pk.AbilityNumber != request.AbilityNumber && pk.Nature != request.Nature)
-            return false;
-
-        if (pk.PIDAbility != request.PIDAbility)
-            return false;
-
-        if (hiddenPower >= 0 && pk.HPType != hiddenPower)
-            return false;
-
-        if (pk.PID % 25 != (int)request.Nature) // Util.Rand32 is the way to go
-            return false;
-
-        if (pk.Gender != EntityGender.GetFromPIDAndRatio(pk.PID, gr))
-            return false;
-        if (Method == PIDType.Pokewalker)
-            return false;
-        if (pk.Version == GameVersion.CXD && Method == PIDType.CXD)
-            return false;
-        if (!new LegalityAnalysis(pk).Valid)
-            return false;
-        return true;
-    }
-
     private static int GetRequiredAbilityIdx(PKM pkm, IBattleTemplate set)
     {
         if (set.Ability == -1)
@@ -1356,52 +1128,6 @@ public static class APILegality
 
         return temp.PersonalInfo.GetIndexOfAbility(set.Ability);
     }
-
-    /// <summary>
-    /// Checks if a Pokewalker seed failed, and if it did, randomizes TID and SID (to retry in the future)
-    /// </summary>
-    /// <param name="seed">Seed</param>
-    /// <param name="method">RNG method (every method except pokewalker is ignored)</param>
-    /// <param name="pk">PKM object</param>
-    /// <param name="original">original encounter pkm</param>
-    private static bool PokeWalkerSeedFail(uint seed, PIDType method, PKM pk, PKM original)
-    {
-        if (method != PIDType.Pokewalker)
-            return false;
-
-        if (seed % 24 != (int)original.Nature)
-            return true;
-
-        pk.TID16 = (ushort)Util.Rand.Next(65535);
-        pk.SID16 = (ushort)Util.Rand.Next(65535);
-        return false;
-    }
-
-    /// <summary>
-    /// Secondary fallback if PIDType.None to slot the PKM into its most likely type
-    /// </summary>
-    /// <param name="enc"></param>
-    /// <returns>PIDType that is likely used</returns>
-    private static PIDType FindLikelyPIDType(IEncounterTemplate enc) => enc switch
-    {
-        EncounterSlot3 s3 => s3.Species == (int)Species.Unown ? PIDType.Method_1_Unown : PIDType.Method_1,
-        EncounterStatic3 => PIDType.Method_1,
-        EncounterSlot3XD => PIDType.PokeSpot,
-        EncounterGift3 g => g.Method,
-        EncounterGift3JPN or EncounterGift3NY => PIDType.BACD_U_AX,
-        EncounterGift3Colo  or { Version: GameVersion.COLO or GameVersion.XD } => PIDType.CXD,
-
-        EncounterStatic4 s => s.Shiny switch
-        {
-            Shiny.Always => PIDType.ChainShiny, // Lake of Rage Gyarados
-            Shiny.Never => PIDType.Pokewalker, // Spiky Eared Pichu
-            _ => PIDType.Method_1,
-        },
-        EncounterStatic4Pokewalker => PIDType.Pokewalker,
-        PGT { GiftType: GiftType4.ManaphyEgg } => PIDType.Method_1,
-
-        _ => PIDType.None,
-    };
 
     /// <summary>
     /// Method to get the correct met level for a Pokémon. Move up the met level till all moves are legal
@@ -1501,8 +1227,6 @@ public static class APILegality
     {
         if (enc is IEncounterEgg && enc is not EncounterEgg8b)
             return criteria;
-        if (enc is EncounterStatic8U)
-            criteria = criteria with { Shiny = Shiny.Never };
         if(enc.Generation > 7)
             criteria = criteria with { Nature = Nature.Random };
         return enc.Species switch
@@ -1653,7 +1377,17 @@ public static class APILegality
         var res = versionlist.Where(v => group.Contains(v)).ToArray();
         return res.Length > 0 ? res : [version];
     }
-
+    /// <summary>
+    /// Generates a legal egg Pokémon based on the provided <see cref="ShowdownSet"/> and trainer information.
+    /// </summary>
+    /// <param name="dest">The destination trainer information to use for the generated egg.</param>
+    /// <param name="set">The <see cref="ShowdownSet"/> containing the desired Pokémon details.</param>
+    /// <param name="result">
+    /// Output parameter that will contain the <see cref="LegalizationResult"/> indicating the outcome of the generation process.
+    /// </param>
+    /// <returns>
+    /// A <see cref="PKM"/> instance representing the generated egg, or a template if generation failed.
+    /// </returns>
     public static PKM GenerateEgg(this ITrainerInfo dest, ShowdownSet set, out LegalizationResult result)
     {
         result = LegalizationResult.Failed;
