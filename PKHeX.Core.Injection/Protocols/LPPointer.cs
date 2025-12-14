@@ -55,7 +55,10 @@ public sealed class LPPointer : InjectionBase
         Get(0xE3E89BD1, "[[main+6105710]+A0]+40", "MyStatus", "Trainer Data"), 
         Get(0x21C9BD44, "[[main+6105710]+D0]+40", "KItem", "Items"),
         Get(0x4F35D0DD, "[[main+6105710]+38]+40", "KMoney", "Money", SCTypeCode.UInt32),
-        Get(0x2D87BE5C, "[[[main+6105710]+68]+40]", "Zukan", "Pokedex") 
+        Get(0x2D87BE5C, "[[[main+6105710]+68]+40]", "Zukan", "Pokedex"),
+        Get(0x1D7EE369, "[main+610A5A0]", "KTicketPointsZARoyaleInfinite", "ZA Royale Ticket Points", SCTypeCode.UInt32), //Thank you Anubis
+        Get(0x0235471C, "[[main+6105710]+160]+50", "KHyperspaceSurveyPoints", "Hyperspace Survey Points", SCTypeCode.UInt32),//Thank you Anubis
+        Get(0xBE007476, "[[[main+6105710]+150]+40]", "KDonuts", "Donuts")//Thank you Anubis
     ];
     public static readonly BlockData[] Blocks_ZA_v103 =
     [
@@ -222,6 +225,7 @@ public sealed class LPPointer : InjectionBase
         { "RaidKitakami", "B_OpenRaids_Click" },
         { "RaidBlueberry", "B_OpenRaids_Click" },
         //{ "Trainer Data", "B_OpenTrainerInfo_Click" },
+        { "Donuts", "B_Donuts_Click" }
     };
 
     private static string GetB1S1Pointer(LiveHeXVersion lv) => lv switch
@@ -247,6 +251,7 @@ public sealed class LPPointer : InjectionBase
 
     public static string GetSaveBlockPointer(LiveHeXVersion lv) => lv switch
     {
+        ZA_v200 => "[[[[main+6108B40]+50]+D0]",
         ZA_v103 => "[[main+5F0E1B0]+30]",
         ZA_v102 => "[[main+5F0C1B0]+30]",
         ZA_v101 => "[[main+5F0B1B0]+30]",
