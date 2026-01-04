@@ -48,11 +48,11 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: | 
           nuget restore ${{env.SOLUTION_FILE_PATH}}
-
-
+          
 ##xmllint --xpath '//Version/text()' Directory.Build.props >> version
     - name: Get pkhex.core version
       run: |
+          dir C:\Users\runneradmin\.nuget\packages\pkhex.core\
           dir -n C:\Users\runneradmin\.nuget\packages\pkhex.core\ >> version          
           $VERSIONNAME=$(cat version)
           echo "VERSIONNAME=$VERSIONNAME" >> $env:GITHUB_ENV
