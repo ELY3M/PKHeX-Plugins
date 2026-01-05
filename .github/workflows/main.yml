@@ -1,4 +1,4 @@
-name: MSBuild
+name: Build
 
 on:
   push:
@@ -67,6 +67,7 @@ jobs:
           $VERSIONNAME=$(cat version)
           echo "VERSIONNAME=$VERSIONNAME" >> $env:GITHUB_ENV
           echo VERSIONNAME is: $VERSIONNAME
+          dir C:\Users\runneradmin\.nuget\packages\pkhex.core\${{ env.VERSIONNAME }}\lib
           
     - name: copy latest dll to nuget pkhex.core dir
       run: | 
@@ -78,7 +79,8 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
       # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
-      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}} /t:Publish
+      ##run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}} /t:Publish
+      run: dotnet build ${{env.SOLUTION_FILE_PATH}}
             
     - name: Create Release
       uses: actions/create-release@latest
@@ -98,7 +100,7 @@ jobs:
         prerelease: false    
         tag_name: ${{ github.run_number }}
         body: ${{ github.event.head_commit.message }}
-        files: ${{ github.workspace }}\AutoLegalityMod\bin\Release\net9.0-windows\AutoModPlugins.dll
+        files: ${{ github.workspace }}\AutoLegalityMod\bin\Release\net10.0-windows\AutoModPlugins.dll
       env:
         GITHUB_TOKEN: ${{ github.token }} 
         
