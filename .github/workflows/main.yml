@@ -67,7 +67,7 @@ jobs:
           $VERSIONNAME=$(cat version)
           echo "VERSIONNAME=$VERSIONNAME" >> $env:GITHUB_ENV
           echo VERSIONNAME is: $VERSIONNAME
-          dir C:\Users\runneradmin\.nuget\packages\pkhex.core\${{ $VERSIONNAME }}\lib
+          dir C:\Users\runneradmin\.nuget\packages\pkhex.core\$VERSIONNAME\lib
           
     - name: copy latest dll to nuget pkhex.core dir
       run: | 
