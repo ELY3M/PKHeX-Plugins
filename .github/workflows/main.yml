@@ -24,15 +24,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    #- name: Setup .NET 10
-    #  uses: actions/setup-dotnet@v4
-    #  with:
-    #  dotnet-version: '10.0.x' # Or a specific version like '10.0.100'
+    - name: Setup .NET 10
+      uses: actions/setup-dotnet@v4
+      with:
+      dotnet-version: '10.0.x'
     
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v2
-      #with:
-      #   vs-version: '18.1.1'
+
     
     - name: Get Pkhex  
       run: git clone -q --depth=5 --branch=master https://github.com/kwsch/PKHeX.git ${{ github.workspace }}/PKHeX
