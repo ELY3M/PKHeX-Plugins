@@ -28,9 +28,12 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
       dotnet-version: '10.0.x'
-    
-    - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v2
+      
+    - name: Setup Nuget
+      uses: nuget/setup-nuget@v2
+        
+    #- name: Add MSBuild to PATH
+    #  uses: microsoft/setup-msbuild@v2
 
     
     - name: Get Pkhex  
@@ -44,7 +47,8 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
       # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
-      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{ github.workspace }}\PKHeX\PKHeX.sln
+      ##run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{ github.workspace }}\PKHeX\PKHeX.sln
+      run: dotnet build ${{ github.workspace }}\PKHeX\PKHeX.sln
 
     - name: Show Github infos
       run: | 
