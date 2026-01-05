@@ -31,8 +31,8 @@ jobs:
     
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v2
-      with:
-        vs-version: '18.1.1'
+      #with:
+      #   vs-version: '18.1.1'
     
     - name: Get Pkhex  
       run: git clone -q --depth=5 --branch=master https://github.com/kwsch/PKHeX.git ${{ github.workspace }}/PKHeX
