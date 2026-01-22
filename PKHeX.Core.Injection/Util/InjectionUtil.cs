@@ -20,7 +20,9 @@ public static class InjectionUtil
         if (!ptr.EndsWith(']'))
         {
             finadd = Util.GetHexValue(ptr.Split('+').Last());
-            ptr = ptr[..ptr.LastIndexOf('+')];
+            int lastindex = ptr.LastIndexOf('+');
+            if (lastindex != -1)
+                ptr = ptr[..lastindex];
         }
         var jumps = ptr.Replace("main", "").Replace("[", "").Replace("]", "").Split("+", StringSplitOptions.RemoveEmptyEntries);
         if (jumps.Length == 0)
@@ -33,7 +35,7 @@ public static class InjectionUtil
             var val = Util.GetHexValue(j.Trim());
             if (val == initaddress)
             {
-                if (jumps.Length == 1)
+                if (jumps.Length == 1 && finadd == 0)
                     return initaddress;
                 continue;
             }

@@ -261,7 +261,7 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
         }
 
         B_Connect.Enabled = B_Connect.Visible = TB_IP.Enabled = TB_Port.Enabled = connectionMode.Enabled = false;
-        B_Disconnect.Enabled = B_Disconnect.Visible = GB_Boxes.Enabled = groupBox2.Enabled = groupBox3.Enabled = true;
+        B_Disconnect.Enabled = B_Disconnect.Visible = GB_Boxes.Enabled = groupBox3.Enabled = true;
     }
 
     private (LiveHeXValidation, string, LiveHeXVersion) Connect_NTR(ICommunicator com, LiveHeXVersion[] versions)
@@ -347,7 +347,6 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
             B_Disconnect.Enabled =
                 B_Disconnect.Visible =
                     GB_Boxes.Enabled =
-                        groupBox2.Enabled =
                             groupBox3.Enabled =
                                 false;
             CB_BlockName.Items.Clear();
@@ -385,7 +384,7 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
     private void B_ReadOffset_Click(object sender, EventArgs e)
     {
         bool readPointer = (ModifierKeys & Keys.Control) == Keys.Control;
-        var txt = TB_Offset.Text;
+        var txt = RamOffset.Text;
         var method = RWMethod.Heap;
         if (RB_Main.Checked)
             method = RWMethod.Main;
@@ -547,7 +546,7 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
 
     private void SetInjectionTypeView()
     {
-        TB_IP.Visible = L_IP.Visible = CurrentInjectionType == InjectorCommunicationType.SocketNetwork;
+        TB_IP.Visible = CurrentInjectionType == InjectorCommunicationType.SocketNetwork;
         L_USBState.Visible = CurrentInjectionType == InjectorCommunicationType.USB;
     }
 
@@ -1019,7 +1018,6 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
         TB_Port.Text = default_port.ToString();
         SetInjectionTypeView();
     }
-
 }
 
 internal class HexTextBox : TextBox

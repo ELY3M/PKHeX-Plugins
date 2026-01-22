@@ -50,4 +50,5 @@ public enum LiveHeXVersion
     ZA_v102 = 36,
     ZA_v103 = 37,
     ZA_v200 = 38,
+    ZA_v201 = 39,
 }

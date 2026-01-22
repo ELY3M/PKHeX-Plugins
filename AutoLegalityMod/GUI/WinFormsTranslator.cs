@@ -165,9 +165,17 @@ public static class WinFormsTranslator
         {
             rtb.BorderStyle = BorderStyle.None;
         }
-        else if (z is ButtonBase b)
+        else if (z is Button b)
         {
             b.FlatStyle = FlatStyle.Popup;
+        }
+        else if (z is CheckBox cbx)
+        {
+            cbx.ForeColor = System.Drawing.Color.White;
+        }
+        else if (z is RadioButton rb)
+        {
+            rb.ForeColor = System.Drawing.Color.White;
         }
     }
     private static IEnumerable<T> GetChildrenOfType<T>(this Control control)
