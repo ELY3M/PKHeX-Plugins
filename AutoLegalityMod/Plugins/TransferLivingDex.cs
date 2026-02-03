@@ -15,7 +15,7 @@ public class TransferLivingDex : AutoModPlugin
 
     protected override void AddPluginControl(ToolStripDropDownItem modmenu)
     {
-        var ctrl = new ToolStripMenuItem(Name) { Image = Resources.livingdex };
+        var ctrl = new ToolStripMenuItem(Name) { Image = WinFormsUtil.GetIconForTheme(Resources.livingdex, Application.IsDarkModeEnabled) };
         ctrl.Click += GenTLivingDex;
         ctrl.Name = "Menu_TransferDex";
         modmenu.DropDownItems.Add(ctrl);

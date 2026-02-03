@@ -12,7 +12,7 @@ public class SettingsEditor : AutoModPlugin
 
     protected override void AddPluginControl(ToolStripDropDownItem modmenu)
     {
-        var ctrl = new ToolStripMenuItem(Name) { Image = Resources.settings };
+        var ctrl = new ToolStripMenuItem(Name) { Image = WinFormsUtil.GetIconForTheme(Resources.settings, Application.IsDarkModeEnabled) };
         ctrl.Click += SettingsForm;
         ctrl.Name = "Menu_ALMSettingsEditor";
         modmenu.DropDownItems.Add(ctrl);

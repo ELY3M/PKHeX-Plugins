@@ -156,7 +156,11 @@ public abstract class AutoModPlugin : IPlugin
         return modmenu;
     }
 
-    private static ToolStripMenuItem CreateBaseGroupItem() => new(ParentMenuText) { Image = Resources.menuautolegality, Name = ParentMenuName };
+    private static ToolStripMenuItem CreateBaseGroupItem() => new(ParentMenuText)
+    {
+        Image = WinFormsUtil.GetIconForTheme(Resources.menuautolegality, Application.IsDarkModeEnabled), 
+        Name = ParentMenuName
+    };
 
     protected abstract void AddPluginControl(ToolStripDropDownItem modmenu);
 

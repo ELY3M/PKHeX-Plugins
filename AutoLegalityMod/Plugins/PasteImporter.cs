@@ -21,7 +21,7 @@ public class PasteImporter : AutoModPlugin
     {
         var ctrl = new ToolStripMenuItem(Name)
         {
-            Image = Resources.autolegalitymod,
+            Image = WinFormsUtil.GetIconForTheme(Resources.autolegalitymod, Application.IsDarkModeEnabled),
             ShortcutKeys = Keys.Control | Keys.I,
         };
         ctrl.Click += ImportPaste;

@@ -16,13 +16,13 @@ public class PKSMBankPlugin : AutoModPlugin
 
         var c1 = new ToolStripMenuItem("Merge PKM into PKSM Bank")
         {
-            Image = Resources.upload,
+            Image = WinFormsUtil.GetIconForTheme(Resources.upload, Application.IsDarkModeEnabled),
         };
         c1.Click += (_, _) => Import();
         c1.Name = "Menu_CreatePKSMBank";
         var c2 = new ToolStripMenuItem("Split PKSM Bank into PKM")
         {
-            Image = Resources.mgdbdownload,
+            Image = WinFormsUtil.GetIconForTheme(Resources.mgdbdownload, Application.IsDarkModeEnabled),
         };
         c2.Click += (_, _) => Export();
         c2.Name = "Menu_ExportPKSMBank";
@@ -31,7 +31,7 @@ public class PKSMBankPlugin : AutoModPlugin
         ctrl.DropDownItems.Add(c2);
         modmenu.DropDownItems.Add(ctrl);
 
-        ctrl.Image = Resources.flagbrew;
+        ctrl.Image = WinFormsUtil.GetIconForTheme(Resources.flagbrew, Application.IsDarkModeEnabled);
     }
 
     private static void Export()

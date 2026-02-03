@@ -12,7 +12,7 @@ public class LiveHeX : AutoModPlugin
 
     protected override void AddPluginControl(ToolStripDropDownItem modmenu)
     {
-        var c1 = new ToolStripMenuItem(Name) { Image = Resources.wifi };
+        var c1 = new ToolStripMenuItem(Name) { Image = WinFormsUtil.GetIconForTheme(Resources.wifi, Application.IsDarkModeEnabled) };
         c1.Click += (_, _) =>
         {
             var sav = SaveFileEditor.SAV;

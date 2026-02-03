@@ -12,7 +12,7 @@ public class URLGenning : AutoModPlugin
 
     protected override void AddPluginControl(ToolStripDropDownItem modmenu)
     {
-        var ctrl = new ToolStripMenuItem(Name) { Image = Resources.urlimport };
+        var ctrl = new ToolStripMenuItem(Name) { Image = WinFormsUtil.GetIconForTheme(Resources.urlimport, Application.IsDarkModeEnabled) };
         ctrl.Click += URLGen;
         ctrl.Name = "Menu_URLGenning";
         modmenu.DropDownItems.Add(ctrl);

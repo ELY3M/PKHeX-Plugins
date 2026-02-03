@@ -14,11 +14,11 @@ public class ExportBoxToShowdown : AutoModPlugin
 
     protected override void AddPluginControl(ToolStripDropDownItem modmenu)
     {
-        var ctrl = new ToolStripMenuItem(Name) { Image = Resources.exportboxtoshowdown };
+        var ctrl = new ToolStripMenuItem(Name) { Image = WinFormsUtil.GetIconForTheme(Resources.exportboxtoshowdown, Application.IsDarkModeEnabled) };
         ctrl.Click += (_, _) => Export(SaveFileEditor);
         ctrl.Name = "Menu_ExportBoxtoShowdown";
         modmenu.DropDownItems.Add(ctrl);
-        var ctrl2 = new ToolStripMenuItem(Name2) { Image = Resources.exportboxtoshowdown };
+        var ctrl2 = new ToolStripMenuItem(Name2) { Image = WinFormsUtil.GetIconForTheme(Resources.exportboxtoshowdown, Application.IsDarkModeEnabled) };
         ctrl2.Click += (_, _) => Export2();
         ctrl2.Name = "Menu_ExportActivetoShowdown";
         modmenu.DropDownItems.Add(ctrl2);

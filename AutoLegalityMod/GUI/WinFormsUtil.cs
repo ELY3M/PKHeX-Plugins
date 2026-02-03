@@ -94,4 +94,24 @@ public static class WinFormsUtil
 
     public static IEnumerable<T> FormsOfType<T>()
         where T : Form => Application.OpenForms.OfType<T>();
+
+    internal static Bitmap GetIconForTheme(Bitmap bmp, bool invert)
+    {
+        if (!invert) return bmp;
+        var dark = new Bitmap(bmp);
+
+        var (h, w) = (dark.Height, dark.Width);
+
+        for (var y = 0; y < h; y++)
+        {
+            for (var x = 0; x < w; x++)
+            {
+                var color = dark.GetPixel(x, y);
+                var inv = Color.FromArgb(color.A, 0xFF - color.R, 0xFF - color.G, 0xFF - color.B);
+                dark.SetPixel(x, y, inv);
+            }
+        }
+
+        return dark;
+    }
 }

@@ -15,7 +15,7 @@ public class MGDBDownloader : AutoModPlugin
 
     protected override void AddPluginControl(ToolStripDropDownItem modmenu)
     {
-        var ctrl = new ToolStripMenuItem(Name) { Image = Resources.mgdbdownload };
+        var ctrl = new ToolStripMenuItem(Name) { Image = WinFormsUtil.GetIconForTheme(Resources.mgdbdownload, Application.IsDarkModeEnabled) };
         ctrl.Click += DownloadMGDB;
         ctrl.Name = "Menu_MGDBDownloader";
         modmenu.DropDownItems.Add(ctrl);

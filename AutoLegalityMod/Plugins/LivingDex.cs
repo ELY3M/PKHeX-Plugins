@@ -20,7 +20,7 @@ public class LivingDex : AutoModPlugin
     {
         var ctrl = new ToolStripMenuItem(Name)
         {
-            Image = Resources.livingdex,
+            Image = WinFormsUtil.GetIconForTheme(Resources.livingdex, Application.IsDarkModeEnabled),
             ShortcutKeys = Keys.Alt | Keys.E,
         };
         ctrl.Click += GenLivingDex;

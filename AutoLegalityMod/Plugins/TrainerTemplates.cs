@@ -16,7 +16,7 @@ public class TrainerTemplates : AutoModPlugin
 
     protected override void AddPluginControl(ToolStripDropDownItem modmenu)
     {
-        var ctrl = new ToolStripMenuItem(Name) { Image = Resources.settings };
+        var ctrl = new ToolStripMenuItem(Name) { Image = WinFormsUtil.GetIconForTheme(Resources.settings, Application.IsDarkModeEnabled) };
         ctrl.Click += CreateTrainerTemplates;
         ctrl.Name = "Menu_TrainerTemplates";
         modmenu.DropDownItems.Add(ctrl);

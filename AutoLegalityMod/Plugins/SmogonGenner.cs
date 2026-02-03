@@ -17,7 +17,7 @@ public class SmogonGenner : AutoModPlugin
         var ctrl = new ToolStripMenuItem(Name)
         {
             Name = "Menu_SmogonGenner",
-            Image = Resources.smogongenner,
+            Image = WinFormsUtil.GetIconForTheme(Resources.smogongenner, Application.IsDarkModeEnabled),
         };
         modmenu.DropDownItems.Add(ctrl);
         ctrl.Click += SmogonGenning;
