@@ -296,7 +296,7 @@ public static class APILegality
         if (batchEdit && set is RegenTemplate { Regen.VersionFilters: { Count: not 0 } x } && TryGetSingleVersion(x, out var single))
             return single;
 
-        var versionlist = GameUtil.GetVersionsWithinRange(template, template.Generation);
+        var versionlist = GameUtil.GetVersionsWithinRange(template, template.Context);
         GameVersion[] gamelist = APILegality.GameVersionPriority switch
         {
             GameVersionPriorityType.NativeOnly => [..GetPairedVersions(destVer, versionlist).OrderByDescending(j=>j==destVer)],

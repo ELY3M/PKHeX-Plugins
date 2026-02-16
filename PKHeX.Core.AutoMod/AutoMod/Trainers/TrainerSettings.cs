@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
-
+using static PKHeX.Core.EntityContext;
 namespace PKHeX.Core.AutoMod;
 
 /// <summary>
@@ -27,9 +27,9 @@ public static class TrainerSettings
     public static ushort DefaultTID16 { get; set; } = 54321; // reverse of PKHeX defaults
     public static ushort DefaultSID16 { get; set; } = 12345; // reverse of PKHeX defaults
 
-    public static ITrainerInfo DefaultFallback(byte gen = 8, LanguageID? lang = null)
+    public static ITrainerInfo DefaultFallback(EntityContext gen = Gen8, LanguageID? lang = null)
     {
-        var fallback = gen > 8 ? DefaultFallback9 : gen > 7 ? DefaultFallback8 : DefaultFallback7;
+        var fallback = gen > Gen8 ? DefaultFallback9 : gen > Gen7 ? DefaultFallback8 : DefaultFallback7;
         return lang == null ? fallback : (ITrainerInfo)new SimpleTrainerInfo(fallback.Version) { Language = (int)lang };
     }
 
@@ -67,20 +67,20 @@ public static class TrainerSettings
     /// <param name="fallback">Fallback trainer data if no new parent is found.</param>
     /// <param name="lang">Language to request for</param>
     /// <returns>Parent trainer data that originates from the <see cref="PKM.Version"/>. If none found, will return the <see cref="fallback"/>.</returns>
-    public static ITrainerInfo GetSavedTrainerData(byte generation, GameVersion ver = GameVersion.Any, ITrainerInfo? fallback = null, LanguageID? lang = null)
+    public static ITrainerInfo GetSavedTrainerData(EntityContext ctx, GameVersion ver = GameVersion.Any, ITrainerInfo? fallback = null, LanguageID? lang = null)
     {
         bool isSpecialVersion = IsSpecialVersion(ver);
-        var trainer = Database.GetTrainerFromGen(generation, lang);
+        var trainer = Database.GetTrainerFromContext(ctx, lang);
         if (trainer is not null)
             return trainer;
 
         if (fallback == null)
-            return isSpecialVersion ? DefaultFallback(ver, lang) : DefaultFallback(generation, lang);
+            return isSpecialVersion ? DefaultFallback(ver, lang) : DefaultFallback(ctx, lang);
 
         if (lang == null)
             return fallback;
 
-        return lang == (LanguageID)fallback.Language ? fallback : isSpecialVersion ? DefaultFallback(ver, lang) : DefaultFallback(generation, lang);
+        return lang == (LanguageID)fallback.Language ? fallback : isSpecialVersion ? DefaultFallback(ver, lang) : DefaultFallback(ctx, lang);
     }
 
     private static bool IsSpecialVersion(GameVersion ver)

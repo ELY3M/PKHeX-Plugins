@@ -138,7 +138,7 @@ public sealed class SysBotMini : ICommunicatorNX, IPokeBlocks
         var size = (length * 2) + 1;
         var rent = ArrayPool<byte>.Shared.Rent(size);
         var buffer = rent.AsSpan(0, size);
-        _ = ReadInternal(buffer);
+        ReadInternal(buffer);
         Decoder.ConvertHexByteStringToBytes(buffer, result);
         buffer.Clear();
         ArrayPool<byte>.Shared.Return(rent);

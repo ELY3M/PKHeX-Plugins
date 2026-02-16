@@ -76,12 +76,12 @@
             // 
             // tabPage1
             // 
-            tabPage1.BackColor = System.Drawing.Color.Transparent;
+            tabPage1.BackColor = System.Drawing.Color.White;
             tabPage1.Controls.Add(groupBox5);
             tabPage1.Controls.Add(GB_Boxes);
             tabPage1.Location = new System.Drawing.Point(4, 24);
+            tabPage1.Margin = new System.Windows.Forms.Padding(0);
             tabPage1.Name = "tabPage1";
-            tabPage1.Padding = new System.Windows.Forms.Padding(3);
             tabPage1.Size = new System.Drawing.Size(396, 220);
             tabPage1.TabIndex = 0;
             tabPage1.Text = "Basic";
@@ -288,6 +288,7 @@
             tabControl1.Controls.Add(tabPage1);
             tabControl1.Controls.Add(tabPage2);
             tabControl1.Location = new System.Drawing.Point(3, 34);
+            tabControl1.Margin = new System.Windows.Forms.Padding(0);
             tabControl1.Name = "tabControl1";
             tabControl1.SelectedIndex = 0;
             tabControl1.Size = new System.Drawing.Size(404, 248);
@@ -295,7 +296,7 @@
             // 
             // tabPage2
             // 
-            tabPage2.BackColor = System.Drawing.Color.Transparent;
+            tabPage2.BackColor = System.Drawing.Color.White;
             tabPage2.Controls.Add(groupBox4);
             tabPage2.Controls.Add(groupBox6);
             tabPage2.Controls.Add(groupBox3);

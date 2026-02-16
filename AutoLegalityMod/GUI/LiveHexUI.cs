@@ -19,7 +19,7 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
     public int ViewIndex => BoxSelect?.SelectedIndex ?? 0;
     public IList<PictureBox> SlotPictureBoxes => throw new InvalidOperationException();
     SaveFile ISlotViewer<PictureBox>.SAV => throw new InvalidOperationException();
-
+    public void ApplyNewFilter(Func<PKM, bool>? filter, bool reload = true) => throw new InvalidOperationException();
     private LiveHeXController Remote;
     private readonly SaveDataEditor<PictureBox> x;
     private readonly PluginSettings _settings;
@@ -718,6 +718,11 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
 
         var size = Remote.Bot.SlotSize;
         var data = sb.ReadBytesAbsolute(address, size);
+        if (data.All(b=>b==0))
+        {
+            WinFormsUtil.Alert("No valid data is located at the specified offset.");
+            return;
+        }
         var pkm = SAV.SAV.GetDecryptedPKM(data);
 
         // Since data might not actually exist at the user-specified offset, double check that the pkm data is valid.
