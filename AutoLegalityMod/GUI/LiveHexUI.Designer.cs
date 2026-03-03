@@ -76,7 +76,7 @@
             // 
             // tabPage1
             // 
-            tabPage1.BackColor = System.Drawing.Color.White;
+            tabPage1.BackColor = System.Drawing.SystemColors.ControlLightLight;
             tabPage1.Controls.Add(groupBox5);
             tabPage1.Controls.Add(GB_Boxes);
             tabPage1.Location = new System.Drawing.Point(4, 24);
@@ -296,7 +296,7 @@
             // 
             // tabPage2
             // 
-            tabPage2.BackColor = System.Drawing.Color.White;
+            tabPage2.BackColor = System.Drawing.SystemColors.ControlLightLight;
             tabPage2.Controls.Add(groupBox4);
             tabPage2.Controls.Add(groupBox6);
             tabPage2.Controls.Add(groupBox3);

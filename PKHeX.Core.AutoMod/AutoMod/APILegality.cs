@@ -86,7 +86,7 @@ public static class APILegality
         var encounters = GetAllEncounters(pk: template, dest, moves: new ReadOnlyMemory<ushort>(set.Moves), gamelist);
         var criteria = EncounterCriteria.GetCriteria(set, template.PersonalInfo, mutations);
         if (regen.EncounterFilters.Any())
-            encounters = encounters.Where(enc => BatchEditing.IsFilterMatch(regen.EncounterFilters, enc));
+            encounters = encounters.Where(enc => BatchEditingUtil.IsFilterMatch(regen.EncounterFilters, enc));
         if (regen.SeedFilters.Any())
             encounters = encounters.Where(enc => enc is (IGenerateSeed32 or IGenerateSeed64)); // Only allow seed generation for seed encounters
         if (ogenc is not null)
@@ -174,9 +174,9 @@ public static class APILegality
             {
                 pk.RefreshChecksum();
                 var b = regen.Batch;
-                BatchEditing.ScreenStrings(b.Filters);
-                BatchEditing.ScreenStrings(b.Instructions);
-                var modified = BatchEditing.TryModify(pk, b.Filters, b.Instructions);
+                EntityBatchEditor.ScreenStrings(b.Filters);
+                EntityBatchEditor.ScreenStrings(b.Instructions);
+                var modified = EntityBatchEditor.Instance.TryModifyIsSuccess(pk, b.Filters, b.Instructions);
                 if (!modified && b.Filters.Count > 0)
                     continue;
 

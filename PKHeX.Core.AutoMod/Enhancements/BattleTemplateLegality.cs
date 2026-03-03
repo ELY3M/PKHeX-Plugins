@@ -68,7 +68,7 @@ public static class BattleTemplateLegality
         var encounters = EncounterMovesetGenerator.GenerateEncounters(pk: failed, moves, versions).ToList();
         var initialcount = encounters.Count;
         if (set is RegenTemplate { Regen.EncounterFilters: { } x })
-            encounters.RemoveAll(enc => !BatchEditing.IsFilterMatch(x, enc));
+            encounters.RemoveAll(enc => !BatchEditingUtil.IsFilterMatch(x, enc));
 
         // No available encounters
         if (encounters.Count == 0)
@@ -200,7 +200,7 @@ public static class BattleTemplateLegality
         var encounters = EncounterMovesetGenerator.GenerateEncounters(blank, moves, versions);
         if (set is not RegenTemplate { Regen.EncounterFilters: { Count: not 0 } x })
             return encounters.Any();
-        encounters = encounters.Where(enc => BatchEditing.IsFilterMatch(x, enc));
+        encounters = encounters.Where(enc => BatchEditingUtil.IsFilterMatch(x, enc));
         return encounters.Any();
     }
 }
