@@ -542,7 +542,7 @@ public static class SimpleEdits
             return;
 
         var expect = trainer.IsFromTrainer(pk) ? 0 : 1;
-        if (pk.CurrentHandler == expect && expect == 0 && !IsTradeEvolutionRequired((Species)enc.Species))
+        if (pk.CurrentHandler == expect && expect == 0 && !IsTradeEvolutionRequired((Species)pk.Species))
             return;
 
         pk.CurrentHandler = 1;
@@ -759,31 +759,32 @@ public static class SimpleEdits
 
     public static bool IsTradeEvolutionRequired(Species species) => species switch
     {
-        Kadabra or
-        Machoke or
-        Graveler or
-        Haunter or
-        Boldore or
-        Gurdurr or
-        Phantump or
-        Pumpkaboo or
-        Poliwhirl or
-        Slowpoke or
-        Onix or
-        Scyther or
-        Seadra or
-        Porygon or
+        Alakazam or
+        Machamp or
+        Golem or
+        Gengar or
+        Gigalith or
+        Conkeldurr or
+        Trevenant or
+        Gourgeist or
+        Politoed or
+        Slowking or
+        Steelix or
+        Scizor or
+        Kingdra or
         Porygon2 or
-        Rhydon or
-        Electabuzz or
-        Magmar or
-        Dusclops or
-        Clamperl or
-        Feebas or
-        Spritzee or
-        Swirlix or
-        Shelmet or
-        Karrablast => true,
+        PorygonZ or
+        Rhyperior or
+        Electivire or
+        Magmortar or
+        Dusknoir or
+        Huntail or
+        Gorebyss or
+        Milotic or
+        Aromatisse or
+        Slurpuff or
+        Accelgor or
+        Escavalier => true,
 
         _ => false,
     };
