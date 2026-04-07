@@ -540,9 +540,9 @@ public static class SimpleEdits
     {
         if (TradeRestrictions.IsUntradableEncounter(enc))
             return;
-
+        if (trainer.Version == GameVersion.PLA) return; //just use the link cable item HT not required;
         var expect = trainer.IsFromTrainer(pk) ? 0 : 1;
-        if (pk.CurrentHandler == expect && expect == 0 && !IsTradeEvolutionRequired((Species)pk.Species))
+        if (pk.CurrentHandler == expect && expect == 0 && !IsTradeEvolutionRequired((Species)pk.Species, enc))
             return;
 
         pk.CurrentHandler = 1;
@@ -757,35 +757,40 @@ public static class SimpleEdits
     /// <returns>Held item ID or null.</returns>
     public static int? GetGenesectHeldItemFromForm(int form) => form == 0 ? null : form + 115;
 
-    public static bool IsTradeEvolutionRequired(Species species) => species switch
+    public static bool IsTradeEvolutionRequired(Species species, IEncounterTemplate enc)
     {
-        Alakazam or
-        Machamp or
-        Golem or
-        Gengar or
-        Gigalith or
-        Conkeldurr or
-        Trevenant or
-        Gourgeist or
-        Politoed or
-        Slowking or
-        Steelix or
-        Scizor or
-        Kingdra or
-        Porygon2 or
-        PorygonZ or
-        Rhyperior or
-        Electivire or
-        Magmortar or
-        Dusknoir or
-        Huntail or
-        Gorebyss or
-        Milotic or
-        Aromatisse or
-        Slurpuff or
-        Accelgor or
-        Escavalier => true,
+        if (enc.Species == (ushort)species) //if its already evolved, doesn't need to be traded;
+            return false;
+        return species switch
+        {
+            Alakazam or
+            Machamp or
+            Golem or
+            Gengar or
+            Gigalith or
+            Conkeldurr or
+            Trevenant or
+            Gourgeist or
+            Politoed or
+            Slowking or
+            Steelix or
+            Scizor or
+            Kingdra or
+            Porygon2 or
+            PorygonZ or
+            Rhyperior or
+            Electivire or
+            Magmortar or
+            Dusknoir or
+            Huntail or
+            Gorebyss or
+            Milotic or
+            Aromatisse or
+            Slurpuff or
+            Accelgor or
+            Escavalier => true,
 
-        _ => false,
-    };
+            _ => false,
+        };
+    }
 }
