@@ -104,7 +104,7 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
         else
             pkm.WriteEncryptedDataParty(PokemonData);
         if (Remote.Bot.Version >= LiveHeXVersion.ZA_v101 && Remote.Bot.Version <= LiveHeXVersion.ZA_v202)
-            PokemonData[344] = (byte)(pkm.Species == 0 ? 0 : 1);
+            PokemonData[344] = (byte)(pkm.Species == 0 ? PokemonData[344] : 1);
         Remote.Bot.SendSlot(PokemonData, SIB.Box, SIB.Slot);
     }
 
