@@ -401,7 +401,8 @@ public static class ShowdownEdits
         }
         if (set.IsChampions)
             pk.SetEVsChampions(set.EVs);
-        pk.SetEVs(set.EVs);
+        else
+            pk.SetEVs(set.EVs);
     }
     /// <summary>
     /// Convert Champions EVs to regular EVs and set them for the PKM. Champions EVs are on a different scale, so they need to be converted before being applied.
