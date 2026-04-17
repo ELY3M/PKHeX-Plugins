@@ -1229,9 +1229,10 @@ public static class APILegality
     {
         if (enc is (IEncounterEgg and not EncounterEgg8b))
             return criteria;
-        if (enc.Generation > 7)
-            criteria = criteria with { Nature = Nature.Random };
-        return enc.Species switch
+        
+        if (enc is EncounterStatic8U)
+            return criteria with { Nature = Nature.Random };
+        criteria = enc.Species switch
         {
             (int)Species.Kartana when criteria is { Nature: Nature.Timid, IV_ATK: <= 21 } => // Beast Boost: Speed
                 Revise(criteria, atk: criteria.IV_ATK),
@@ -1242,6 +1243,9 @@ public static class APILegality
             (int)Species.Unown when enc.Generation is 4 => criteria with { Form = (sbyte)set.Form},
             _ => Revise(criteria, atk: criteria.IV_ATK == 0 ? (sbyte)0 : (sbyte)-1, spe: criteria.IV_SPE == 0 ? (sbyte)0 : (sbyte)-1),
         };
+        if (enc.Generation > 7)
+            criteria = criteria with { Nature = Nature.Random };
+        return criteria;
     }
 
     private static EncounterCriteria Revise(EncounterCriteria enc,
