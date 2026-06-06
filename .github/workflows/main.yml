@@ -38,8 +38,8 @@ jobs:
 
     - name: Restore NuGet packages
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      #run: nuget restore ${{ github.workspace }}\PKHeX\PKHeX.sln
-      run: dotnet restore ${{ github.workspace }}\PKHeX\PKHeX.sln
+      #run: nuget restore ${{ github.workspace }}\PKHeX\PKHeX.slnx
+      run: dotnet restore ${{ github.workspace }}\PKHeX\PKHeX.slnx
       
     - name: Build Pkhex
       working-directory: ${{env.GITHUB_WORKSPACE}}
