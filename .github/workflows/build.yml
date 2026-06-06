@@ -5,7 +5,7 @@ on:
     branches: [ cherrytree ]
 
 env:
-  SOLUTION: PKHeX-Plugins.sln
+  SOLUTION: PKHeX-Plugins.slnx
   BUILD_PLATFORM: Any CPU
   BUILD_CONFIGURATION: Release
   DOTNET_VERSION: '10.0.103'
@@ -31,7 +31,7 @@ jobs:
       run: git clone -q --depth=5 --branch=master https://github.com/kwsch/PKHeX.git PKHeX
 
     - name: Restore NuGet packages for PKHeX
-      run: dotnet restore PKHeX/PKHeX.sln
+      run: dotnet restore PKHeX/PKHeX.slnx
 
     - name: Build PKHeX.Core
       run: dotnet build PKHeX/PKHeX.Core/PKHeX.Core.csproj -c ${{ env.BUILD_CONFIGURATION }} -p:Platform="${{ env.BUILD_PLATFORM }}"
