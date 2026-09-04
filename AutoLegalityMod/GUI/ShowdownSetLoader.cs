@@ -264,6 +264,7 @@ public static class ShowdownSetLoader
         {
             if (!settings.PrioritizeEncounters.Contains(ep) && ep != 0)
                 settings.PrioritizeEncounters.Add(ep);
+            settings.PrioritizeEncounters.Remove(0);
         }
 
         settings.PrioritizeEncounters = [.. settings.PrioritizeEncounters.Distinct()];
