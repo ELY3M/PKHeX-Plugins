@@ -27,11 +27,11 @@ jobs:
 
     - name: Restore NuGet packages
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: dotnet restore ${{ github.workspace }}/PKHeX/PKHeX.slnx
+      run: dotnet restore ${{ github.workspace }}/PKHeX/PKHeX.slnx -p:EnableWindowsTargeting=true
       
     - name: Build Pkhex
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: dotnet build ${{ github.workspace }}/PKHeX/PKHeX.slnx -c Release -r win-x64 -p:EnableWindowsTargeting=true -r win-x64 -p:ImportByWildcardBeforeSolution=false 
+      run: dotnet build ${{ github.workspace }}/PKHeX/PKHeX.slnx -c Release -p:EnableWindowsTargeting=true -r win-x64 -p:ImportByWildcardBeforeSolution=false 
                           
     - name: Restore NuGet packages
       working-directory: ${{env.GITHUB_WORKSPACE}}
@@ -60,7 +60,7 @@ jobs:
       
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: dotnet build . -c Release -r win-x64 -p:EnableWindowsTargeting=true -r win-x64 -p:ImportByWildcardBeforeSolution=false
+      run: dotnet build . -c Release -p:EnableWindowsTargeting=true -r win-x64 -p:ImportByWildcardBeforeSolution=false
             
     - name: Create Release
       uses: actions/create-release@latest
