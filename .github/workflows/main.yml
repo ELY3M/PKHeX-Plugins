@@ -80,7 +80,7 @@ jobs:
         prerelease: false    
         tag_name: ${{ github.run_number }}
         body: ${{ github.event.head_commit.message }}
-        files: ${{ github.workspace }}\AutoLegalityMod\bin\Release\net10.0-windows\AutoModPlugins.dll
+        files: ${{ github.workspace }}/AutoLegalityMod/bin/Release/net10.0-windows/AutoModPlugins.dll
       env:
         GITHUB_TOKEN: ${{ github.token }} 
         
