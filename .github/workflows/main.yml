@@ -31,11 +31,11 @@ jobs:
       
     - name: Build Pkhex
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: dotnet build ${{ github.workspace }}/PKHeX/PKHeX.slnx --configuration Release
+      run: dotnet build ${{ github.workspace }}/PKHeX/PKHeX.slnx --configuration Release -p:EnableWindowsTargeting=true
                           
     - name: Restore NuGet packages
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: dotnet restore .
+      run: dotnet restore . -p:EnableWindowsTargeting=true
 
     - name: Show Github infos
       run: | 
