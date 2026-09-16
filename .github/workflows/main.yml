@@ -44,28 +44,29 @@ jobs:
     - name: Test
       run: |
         echo $HOME
-        ls -la $HOME\.nuget\packages\     
+        ls -la $HOME
+        ls -la $HOME/.nuget/packages    
       
       
 ##xmllint --xpath '//Version/text()' Directory.Build.props >> version
     - name: Get pkhex.core version
       run: |
-          dir C:\Users\runneradmin\.nuget\packages\pkhex.core\
-          dir -n C:\Users\runneradmin\.nuget\packages\pkhex.core\ >> version          
+          ls -la $HOME/.nuget/packages/pkhex.core/
+          ls -n $HOME/.nuget/packages/pkhex.core/ >> version          
           $VERSIONNAME=$(cat version)
           echo "VERSIONNAME=$VERSIONNAME" >> $env:GITHUB_ENV
           echo VERSIONNAME is: $VERSIONNAME
-          dir C:\Users\runneradmin\.nuget\packages\pkhex.core\$VERSIONNAME\lib
+          ls $HOME/.nuget/packages/pkhex.core/$VERSIONNAME/lib
           
     - name: copy latest dll to nuget pkhex.core dir
       run: | 
         echo "pkhex version: ${{ env.VERSIONNAME }}" 
-        XCOPY ${{ github.workspace }}\PKHeX\PKHeX.Core\bin\Release\net10.0\PKHeX.Core.dll C:\Users\runneradmin\.nuget\packages\pkhex.core\${{ env.VERSIONNAME }}\lib\net10.0\ /Y 
-        dir C:\Users\runneradmin\.nuget\packages\pkhex.core\${{ env.VERSIONNAME }}\lib\net10.0\
+        cp ${{ github.workspace }}/PKHeX/PKHeX.Core/bin/Release/net10.0/PKHeX.Core.dll $HOME/.nuget/packages/pkhex.core/${{ env.VERSIONNAME }}/lib/net10.0/ 
+        ls $HOME/.nuget/packages/pkhex.core/${{ env.VERSIONNAME }}/lib/net10.0/
       
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: dotnet build . --configuration Release
+      run: dotnet build . --configuration Release -p:EnableWindowsTargeting=true
             
     - name: Create Release
       uses: actions/create-release@latest
