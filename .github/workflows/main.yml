@@ -49,8 +49,7 @@ jobs:
           ls $HOME/.nuget/packages/pkhex.core/ >> version
           cat version
           VERSIONNAME=$(cat version)
-          echo $VERSIONNAME
-          echo $VERSIONNAME >> $GITHUB_ENV 
+          echo "VERSIONNAME=$(cat version)" >> $GITHUB_ENV
           ls -la $HOME/.nuget/packages/pkhex.core/$VERSIONNAME/lib/net10.0/
           
     - name: copy latest dll to nuget pkhex.core dir
