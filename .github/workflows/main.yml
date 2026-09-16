@@ -48,7 +48,7 @@ jobs:
           ls -la $HOME/.nuget/packages/pkhex.core/
           ls $HOME/.nuget/packages/pkhex.core/ >> version
           cat version
-          VERSIONNAME=$(cat filename.txt)
+          VERSIONNAME=$(cat version)
           echo $VERSIONNAME
           echo $VERSIONNAME >> $env:GITHUB_ENV 
           ls $HOME/.nuget/packages/pkhex.core/$VERSIONNAME/lib
