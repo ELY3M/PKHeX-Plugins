@@ -41,18 +41,13 @@ jobs:
       run: | 
         echo 'Workspace path ${{ github.workspace }} - runner.temp ${{ runner.temp }}'  
 
-    - name: Test
-      run: |
-        echo $HOME
-        ls -la $HOME
-        ls -la $HOME/.nuget/packages    
-      
-      
+ 
 ##xmllint --xpath '//Version/text()' Directory.Build.props >> version
     - name: Get pkhex.core version
       run: |
           ls -la $HOME/.nuget/packages/pkhex.core/
-          ls -n $HOME/.nuget/packages/pkhex.core/ >> version          
+          ls $HOME/.nuget/packages/pkhex.core/ >> version
+          cat version
           $VERSIONNAME=$(cat version)
           echo "VERSIONNAME=$VERSIONNAME" >> $env:GITHUB_ENV
           echo VERSIONNAME is: $VERSIONNAME
