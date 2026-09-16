@@ -27,16 +27,26 @@ jobs:
 
     - name: Restore NuGet packages
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: dotnet restore ${{ github.workspace }}\PKHeX\PKHeX.slnx
+      run: dotnet restore ${{ github.workspace }}/PKHeX/PKHeX.slnx
       
     - name: Build Pkhex
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: dotnet build ${{ github.workspace }}\PKHeX\PKHeX.slnx --configuration Release
+      run: dotnet build ${{ github.workspace }}/PKHeX/PKHeX.slnx --configuration Release
                           
     - name: Restore NuGet packages
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: dotnet restore .
-       
+
+    - name: Show Github infos
+      run: | 
+        echo 'Workspace path ${{ github.workspace }} - runner.temp ${{ runner.temp }}'  
+
+    - name: Test
+      run: |
+        echo $HOME
+        ls -la $HOME\.nuget\packages\     
+      
+      
 ##xmllint --xpath '//Version/text()' Directory.Build.props >> version
     - name: Get pkhex.core version
       run: |
