@@ -2,24 +2,17 @@ name: Elys Build
 
 on:
   push:
-    branches: [ "cherrytree" ]
+    branches: [ "*" ]
   pull_request:
-    branches: [ "cherrytree" ]
-
-env:
-  # Path to the solution file relative to the root of the project.
-  SOLUTION_FILE_PATH: .
-
-  # Configuration type to build.
-  # You can convert this to a build matrix if you need coverage of multiple configuration types.
-  # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-  BUILD_CONFIGURATION: Release
+    branches: [ "*" ]
+  workflow_dispatch:
+  workflow_call:
 
 permissions: write-all
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
@@ -28,34 +21,21 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
        dotnet-version: '10.0.x'
-      
-    #- name: Add MSBuild to PATH
-    #  uses: microsoft/setup-msbuild@v2
-
-    
+          
     - name: Get Pkhex  
       run: git clone -q --depth=5 --branch=master https://github.com/kwsch/PKHeX.git ${{ github.workspace }}/PKHeX
 
     - name: Restore NuGet packages
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      #run: nuget restore ${{ github.workspace }}\PKHeX\PKHeX.slnx
       run: dotnet restore ${{ github.workspace }}\PKHeX\PKHeX.slnx
       
     - name: Build Pkhex
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      # Add additional options to the MSBuild command line here (like platform or verbosity level).
-      # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
-      ##run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{ github.workspace }}\PKHeX\PKHeX.sln
-      run: dotnet build ${{ github.workspace }}\PKHeX\PKHeX.sln --configuration Release
-
-    - name: Show Github infos
-      run: | 
-        echo 'Workspace path ${{ github.workspace }} - runner.temp ${{ runner.temp }}'  
+      run: dotnet build ${{ github.workspace }}\PKHeX\PKHeX.slnx --configuration Release
                           
     - name: Restore NuGet packages
       working-directory: ${{env.GITHUB_WORKSPACE}}
-       ##run: nuget restore ${{env.SOLUTION_FILE_PATH}}
-      run: dotnet restore ${{env.SOLUTION_FILE_PATH}}
+      run: dotnet restore .
        
 ##xmllint --xpath '//Version/text()' Directory.Build.props >> version
     - name: Get pkhex.core version
@@ -75,10 +55,7 @@ jobs:
       
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      # Add additional options to the MSBuild command line here (like platform or verbosity level).
-      # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
-      ##run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}} /t:Publish
-      run: dotnet build ${{env.SOLUTION_FILE_PATH}} --configuration Release
+      run: dotnet build . --configuration Release
             
     - name: Create Release
       uses: actions/create-release@latest
@@ -92,7 +69,7 @@ jobs:
         body: ${{ github.event.head_commit.message }}
             
     - name: Upload Release
-      uses: softprops/action-gh-release@v2.2.1
+      uses: softprops/action-gh-release@v2
       with:
         draft: false
         prerelease: false    
