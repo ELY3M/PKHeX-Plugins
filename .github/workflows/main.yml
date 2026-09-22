@@ -15,12 +15,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
        
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
         with:
-         dotnet-version: '10.0.x'
+          dotnet-version: '10.0.x'
             
       - name: Get Pkhex  
         run: git clone -q --depth=5 --branch=master https://github.com/kwsch/PKHeX.git ${{ github.workspace }}/PKHeX
@@ -59,7 +59,7 @@ jobs:
         
       - name: Build
         working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: dotnet build . -c Release -p:EnableWindowsTargeting=true -r win-x64 -p:ImportByWildcardBeforeSolution=false
+        run: dotnet build . -c Release -p:EnableWindowsTargeting=true -r win-x64 -p:ImportByWildcardBeforeSolution=false
             
       - name: get date/date 
         env:
