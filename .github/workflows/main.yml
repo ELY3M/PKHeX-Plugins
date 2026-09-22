@@ -15,73 +15,67 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Setup .NET 10
-      uses: actions/setup-dotnet@v4
-      with:
-       dotnet-version: '10.0.x'
-          
-    - name: Get Pkhex  
-      run: git clone -q --depth=5 --branch=master https://github.com/kwsch/PKHeX.git ${{ github.workspace }}/PKHeX
-
-    - name: Restore NuGet packages
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: dotnet restore ${{ github.workspace }}/PKHeX/PKHeX.slnx -p:EnableWindowsTargeting=true
-      
-    - name: Build Pkhex
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: dotnet build ${{ github.workspace }}/PKHeX/PKHeX.slnx -c Release -p:EnableWindowsTargeting=true -r win-x64 -p:ImportByWildcardBeforeSolution=false 
-                          
-    - name: Restore NuGet packages
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: dotnet restore . -p:EnableWindowsTargeting=true
-
-    - name: Show Github infos
-      run: | 
-        echo 'Workspace path ${{ github.workspace }} - runner.temp ${{ runner.temp }}'  
-
- 
-##xmllint --xpath '//Version/text()' Directory.Build.props >> version
-    - name: Get pkhex.core version
-      run: |
-          ls -la $HOME/.nuget/packages/pkhex.core/
-          ls $HOME/.nuget/packages/pkhex.core/ >> version
-          cat version
-          VERSIONNAME=$(cat version)
-          echo "VERSIONNAME=$(cat version)" >> $GITHUB_ENV
-          ls -la $HOME/.nuget/packages/pkhex.core/$VERSIONNAME/lib/net10.0/
-          
-    - name: copy latest dll to nuget pkhex.core dir
-      run: | 
-        echo "pkhex version: ${{ env.VERSIONNAME }}" 
-        cp ${{ github.workspace }}/PKHeX/PKHeX.Core/bin/Release/net10.0/PKHeX.Core.dll $HOME/.nuget/packages/pkhex.core/${{ env.VERSIONNAME }}/lib/net10.0/ 
-        ls $HOME/.nuget/packages/pkhex.core/${{ env.VERSIONNAME }}/lib/net10.0/
-      
-    - name: Build
-      working-directory: ${{env.GITHUB_WORKSPACE}}
+      - uses: actions/checkout@v4
+       
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+         dotnet-version: '10.0.x'
+            
+      - name: Get Pkhex  
+        run: git clone -q --depth=5 --branch=master https://github.com/kwsch/PKHeX.git ${{ github.workspace }}/PKHeX
+       
+      - name: Restore NuGet packages
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: dotnet restore ${{ github.workspace }}/PKHeX/PKHeX.slnx -p:EnableWindowsTargeting=true
+        
+      - name: Build Pkhex
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: dotnet build ${{ github.workspace }}/PKHeX/PKHeX.slnx -c Release -p:EnableWindowsTargeting=true -r win-x64 -p:ImportByWildcardBeforeSolution=false 
+                            
+      - name: Restore NuGet packages
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: dotnet restore . -p:EnableWindowsTargeting=true
+       
+      - name: Show Github infos
+        run: | 
+          echo 'Workspace path ${{ github.workspace }} - runner.temp ${{ runner.temp }}'  
+       
+       
+      - name: Get pkhex.core version
+        run: |
+            ls -la $HOME/.nuget/packages/pkhex.core/
+            ls $HOME/.nuget/packages/pkhex.core/ >> version
+            cat version
+            VERSIONNAME=$(cat version)
+            echo "VERSIONNAME=$(cat version)" >> $GITHUB_ENV
+            ls -la $HOME/.nuget/packages/pkhex.core/$VERSIONNAME/lib/net10.0/
+            
+      - name: copy latest dll to nuget pkhex.core dir
+        run: | 
+          echo "pkhex version: ${{ env.VERSIONNAME }}" 
+          cp ${{ github.workspace }}/PKHeX/PKHeX.Core/bin/Release/net10.0/PKHeX.Core.dll $HOME/.nuget/packages/pkhex.core/${{ env.VERSIONNAME }}/lib/net10.0/ 
+          ls $HOME/.nuget/packages/pkhex.core/${{ env.VERSIONNAME }}/lib/net10.0/
+        
+      - name: Build
+        working-directory: ${{env.GITHUB_WORKSPACE}}
       run: dotnet build . -c Release -p:EnableWindowsTargeting=true -r win-x64 -p:ImportByWildcardBeforeSolution=false
             
-    - name: Create Release
-      uses: actions/create-release@latest
-      env:
-        GITHUB_TOKEN: ${{ github.token }} 
-      with:
-        draft: false
-        prerelease: false
-        release_name: ${{ steps.version.outputs.version }}
-        tag_name: ${{ github.run_number }}
-        body: ${{ github.event.head_commit.message }}
+      - name: get date/date 
+        env:
+          TZ: "America/Chicago"
+        run: | 
+          echo "NOW=$(date +'%m-%d-%Y-%I.%M.%S.%p')" >> $GITHUB_ENV
             
-    - name: Upload Release
-      uses: softprops/action-gh-release@v2
-      with:
-        draft: false
-        prerelease: false    
-        tag_name: ${{ github.run_number }}
-        body: ${{ github.event.head_commit.message }}
-        files: ${{ github.workspace }}/AutoLegalityMod/bin/Release/net10.0-windows/win-x64/AutoModPlugins.dll
-      env:
-        GITHUB_TOKEN: ${{ github.token }} 
-        
+      - name: Upload Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          prerelease: false    
+          tag_name: ${{ env.NOW }}
+          body: ${{ github.event.head_commit.message }}
+          files: ${{ github.workspace }}/AutoLegalityMod/bin/Release/net10.0-windows/win-x64/AutoModPlugins.dll
+          name: "Release ${{ env.NOW }}"
+
+         
         
